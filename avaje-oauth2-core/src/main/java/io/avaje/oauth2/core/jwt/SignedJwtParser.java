@@ -7,17 +7,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 final class SignedJwtParser {
 
-    static SignedJwt parse(String rawToken) {
+    static SignedJwt parse(String rawToken) throws JwtVerifyException {
         int first = rawToken.indexOf('.');
         int second = rawToken.indexOf('.', first + 1);
         int third = rawToken.indexOf('.', second + 1);
         if (third != -1) {
-            throw new IllegalArgumentException("Only support signed jwt token");
+            throw new JwtVerifyException("Only signed jwt token supported");
         }
 
         String headerDecoded = decodeString(rawToken.substring(0, first));
         String payloadDecoded = decodeString(rawToken.substring(first + 1, second));
-
         byte[] contentBytes = rawToken.substring(0, second).getBytes(StandardCharsets.UTF_8);
         byte[] signatureBytes = decode(rawToken.substring(second + 1));
 

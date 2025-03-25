@@ -12,7 +12,7 @@ public interface JwtKeySource {
     /**
      * Return the public key for the given key id.
      */
-    PublicKey key(String kid);
+    PublicKey key(String kid) throws JwtKeyException;
 
     /**
      * Build an immutable KeySource from the KeySet.

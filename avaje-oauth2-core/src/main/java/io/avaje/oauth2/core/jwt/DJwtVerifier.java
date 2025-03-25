@@ -26,12 +26,13 @@ final class DJwtVerifier implements JwtVerifier {
     private final Duration clockSkew;
     private final Clock clock;
 
-    private DJwtVerifier(Map<String, AlgorithmVerifier> map,
-                         JwtKeySource keySource,
-                         JsonDataMapper mapper,
-                         String expectedIssuer,
-                         Duration clockSkew,
-                         Clock clock) {
+    private DJwtVerifier(
+            Map<String, AlgorithmVerifier> map,
+            JwtKeySource keySource,
+            JsonDataMapper mapper,
+            String expectedIssuer,
+            Duration clockSkew,
+            Clock clock) {
         this.map = map;
         this.keySource = keySource;
         this.mapper = mapper;
@@ -45,7 +46,7 @@ final class DJwtVerifier implements JwtVerifier {
     }
 
     @Override
-    public AccessToken verifyAccessToken(String accessToken) {
+    public AccessToken verifyAccessToken(String accessToken) throws JwtVerifyException {
         SignedJwt accessTokenJwt = SignedJwt.parse(accessToken);
         verify(accessTokenJwt);
 
@@ -172,7 +173,6 @@ final class DJwtVerifier implements JwtVerifier {
             return this;
         }
 
-
         @Override
         public JwtVerifier build() {
             if (mapper == null) {
@@ -208,7 +208,7 @@ final class DJwtVerifier implements JwtVerifier {
             try {
                 return Signature.getInstance(algorithm);
             } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
+                throw new JwtVerifyException("Unsupported algorithm", e);
             }
         }
     }
@@ -228,7 +228,7 @@ final class DJwtVerifier implements JwtVerifier {
                 verifier.update(content);
                 return verifier.verify(signature);
             } catch (InvalidKeyException e) {
-                throw new IllegalArgumentException("Invalid public key", e);
+                throw new JwtVerifyException("Invalid public key", e);
             } catch (SignatureException e) {
                 return false;
             }
