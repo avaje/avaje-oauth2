@@ -16,6 +16,7 @@
 
     <modules>
         <module>avaje-oauth2-core</module>
+        <module>avaje-oauth2-helidon-jwtfilter</module>
         <module>avaje-oauth2-oidc-cognito</module>
     </modules>
 
