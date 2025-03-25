@@ -1,5 +1,5 @@
 
-name: avaje-nima EA
+name: avaje-oauth2 EA
 
 on:
   workflow_dispatch:
