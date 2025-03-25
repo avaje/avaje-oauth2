@@ -48,7 +48,8 @@ final class AuthFilter implements JwtAuthFilter {
         throw new UnauthorizedException("Unauthorized");
     }
 
-    private static class TokenPrincipal implements Principal {
+    private static final class TokenPrincipal implements Principal {
+
         private final String name;
 
         TokenPrincipal(String name) {
