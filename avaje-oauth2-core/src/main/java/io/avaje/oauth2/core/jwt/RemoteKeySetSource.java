@@ -37,7 +37,7 @@ final class RemoteKeySetSource implements JwtKeySource {
     }
 
     @Override
-    public PublicKey key(String kid) {
+    public PublicKey key(String kid) throws JwtKeyException {
         final PublicKey publicKey = publicKeys.get(kid);
         if (publicKey != null) {
             return publicKey;
@@ -46,7 +46,7 @@ final class RemoteKeySetSource implements JwtKeySource {
         reloadKeys();
         final PublicKey refreshedKey = publicKeys.get(kid);
         if (refreshedKey == null) {
-            throw new IllegalArgumentException("Unable to provide key for " + kid);
+            throw new JwtKeyException("Unable to provide key for " + kid);
         }
         return refreshedKey;
     }
@@ -64,13 +64,13 @@ final class RemoteKeySetSource implements JwtKeySource {
             if (statusCode < 400) {
                 return res.body();
             }
-            throw new RuntimeException("Unexpected status code " + res.statusCode() + " obtaining jwks json from " + jwksUri);
+            throw new JwtKeyException("Unexpected status code " + res.statusCode() + " obtaining jwks json from " + jwksUri);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw new JwtKeyException("Error obtaining remote Key", e);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new JwtKeyException("Error obtaining remote Key", e);
         }
     }
 

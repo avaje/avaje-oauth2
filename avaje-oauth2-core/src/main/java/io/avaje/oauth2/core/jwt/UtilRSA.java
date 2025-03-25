@@ -12,7 +12,7 @@ final class UtilRSA {
 
     static PublicKey createRsaKey(KeySet.KeyInfo key) {
         if (!"RS256".equals(key.algorithm())) {
-            throw new IllegalArgumentException("Unsupported key algorithm: " + key.algorithm());
+            throw new JwtKeyException("Unsupported key algorithm: " + key.algorithm());
         }
         return createRsaKey(key.exponent(), key.modulus());
     }
@@ -25,7 +25,7 @@ final class UtilRSA {
             KeyFactory factory = KeyFactory.getInstance("RSA");
             return factory.generatePublic(new RSAPublicKeySpec(modulus, exponent));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new JwtKeyException("Unable to create PublicKey", e);
         }
     }
 
