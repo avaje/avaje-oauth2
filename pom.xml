@@ -11,7 +11,8 @@
 
     <groupId>io.avaje</groupId>
     <artifactId>avaje-oauth2-parent</artifactId>
-    <version>0.1</version>
+    <name>avaje-oauth2-parent</name>
+    <version>1.0</version>
     <packaging>pom</packaging>
 
     <modules>

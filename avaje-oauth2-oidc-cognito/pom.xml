@@ -6,16 +6,17 @@
     <parent>
         <groupId>io.avaje</groupId>
         <artifactId>avaje-oauth2-parent</artifactId>
-        <version>0.1</version>
+        <version>1.0</version>
     </parent>
 
     <artifactId>avaje-oauth2-oidc-cognito</artifactId>
+    <name>avaje-oauth2-oidc-cognito</name>
 
     <dependencies>
         <dependency>
             <groupId>io.avaje</groupId>
             <artifactId>avaje-oauth2-core</artifactId>
-            <version>0.1</version>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>io.avaje</groupId>
