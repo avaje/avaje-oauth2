@@ -4,8 +4,44 @@ package io.avaje.oauth2.core.jwt;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class SignedJwtParserTest {
+
+    @Test
+    void parse_noDots_throwsJwtVerifyException() {
+        assertThatThrownBy(() -> SignedJwtParser.parse("not-a-real-token"))
+            .isInstanceOf(JwtVerifyException.class)
+            .hasMessageContaining("Malformed jwt token");
+    }
+
+    @Test
+    void parse_emptyToken_throwsJwtVerifyException() {
+        assertThatThrownBy(() -> SignedJwtParser.parse(""))
+            .isInstanceOf(JwtVerifyException.class)
+            .hasMessageContaining("Malformed jwt token");
+    }
+
+    @Test
+    void parse_onlyOneDot_throwsJwtVerifyException() {
+        assertThatThrownBy(() -> SignedJwtParser.parse("header.payload"))
+            .isInstanceOf(JwtVerifyException.class)
+            .hasMessageContaining("Malformed jwt token");
+    }
+
+    @Test
+    void parse_tooManySegments_throwsJwtVerifyException() {
+        assertThatThrownBy(() -> SignedJwtParser.parse("a.b.c.d"))
+            .isInstanceOf(JwtVerifyException.class)
+            .hasMessageContaining("Only signed jwt token supported");
+    }
+
+    @Test
+    void parse_invalidBase64_throwsJwtVerifyException() {
+        assertThatThrownBy(() -> SignedJwtParser.parse("!!!.@@@.###"))
+            .isInstanceOf(JwtVerifyException.class)
+            .hasMessageContaining("Malformed jwt token");
+    }
 
     @Test
     void decodeString() {
