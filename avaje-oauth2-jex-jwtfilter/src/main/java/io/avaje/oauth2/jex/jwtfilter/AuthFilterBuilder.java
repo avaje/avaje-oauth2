@@ -1,5 +1,6 @@
 package io.avaje.oauth2.jex.jwtfilter;
 
+import io.avaje.oauth2.core.jwt.BearerAuthoriser;
 import io.avaje.oauth2.core.jwt.JwtVerifier;
 
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ final class AuthFilterBuilder implements JwtAuthFilter.Builder {
 
     private final List<String> allowedPaths = new ArrayList<>();
     private JwtVerifier verifier;
+    private BearerAuthoriser bearerAuthoriser;
 
     @Override
     public JwtAuthFilter.Builder permit(String path) {
@@ -23,10 +25,16 @@ final class AuthFilterBuilder implements JwtAuthFilter.Builder {
     }
 
     @Override
+    public JwtAuthFilter.Builder bearerAuthoriser(BearerAuthoriser bearerAuthoriser) {
+        this.bearerAuthoriser = bearerAuthoriser;
+        return this;
+    }
+
+    @Override
     public JwtAuthFilter build() {
         if (verifier == null) {
             throw new IllegalStateException("JwtVerifier is required");
         }
-        return new AuthFilter(verifier, allowedPaths);
+        return new AuthFilter(verifier, allowedPaths, bearerAuthoriser);
     }
 }

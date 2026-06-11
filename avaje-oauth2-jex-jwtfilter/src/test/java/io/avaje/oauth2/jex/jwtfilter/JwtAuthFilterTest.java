@@ -118,6 +118,78 @@ class JwtAuthFilterTest {
         assertThat(chain.proceeded).isFalse();
     }
 
+    @Test
+    void bearerAuthoriser_acceptsApiKey_skipsJwt() {
+        // ThrowingVerifier fails if the JWT path is taken -- proves authoriser precedence.
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new ThrowingVerifier())
+                .bearerAuthoriser(token -> "secret-123".equals(token) ? "api-key" : null)
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer secret-123", "/v1/apps");
+        FakeChain chain = new FakeChain();
+
+        filter.filter(ctx.asContext(), chain);
+
+        assertThat(chain.proceeded).isTrue();
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_PRINCIPAL)).isEqualTo("api-key");
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_ACCESS_TOKEN)).isNull();
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_SCOPE)).isNull();
+    }
+
+    @Test
+    void bearerAuthoriser_returnsNull_fallsThroughToJwt() {
+        AccessToken token = accessToken();
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-jwt", token))
+                .bearerAuthoriser(t -> null)
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer good-jwt", "/v1/apps");
+        FakeChain chain = new FakeChain();
+
+        filter.filter(ctx.asContext(), chain);
+
+        assertThat(chain.proceeded).isTrue();
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_ACCESS_TOKEN)).isSameAs(token);
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_PRINCIPAL)).isEqualTo("client123");
+    }
+
+    @Test
+    void bearerAuthoriser_returnsNull_andJwtInvalid_throws401() {
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-jwt", accessToken()))
+                .bearerAuthoriser(t -> null)
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer something-else", "/v1/apps");
+        FakeChain chain = new FakeChain();
+
+        assertThatThrownBy(() -> filter.filter(ctx.asContext(), chain))
+                .isInstanceOf(HttpResponseException.class)
+                .satisfies(e -> assertThat(((HttpResponseException) e).status()).isEqualTo(401));
+        assertThat(chain.proceeded).isFalse();
+    }
+
+    @Test
+    void permittedPath_ignoresAuth_evenWithInvalidBearer() {
+        // permit is checked first: neither bearerAuthoriser nor JWT verify should run.
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .permit("/health")
+                .verifier(new ThrowingVerifier())
+                .bearerAuthoriser(token -> {
+                    throw new AssertionError("bearerAuthoriser should not run on permitted path");
+                })
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer bad", "/health/liveness");
+        FakeChain chain = new FakeChain();
+
+        filter.filter(ctx.asContext(), chain);
+
+        assertThat(chain.proceeded).isTrue();
+    }
+
     /** JwtVerifier that returns a preset token only for an exact match, else 401. */
     private static final class FakeVerifier implements JwtVerifier {
         private final String validToken;
@@ -139,6 +211,19 @@ class JwtAuthFilterTest {
                 throw new JwtVerifyException("invalid token");
             }
             return result;
+        }
+    }
+
+    /** JwtVerifier that fails the test if its verify path is reached. */
+    private static final class ThrowingVerifier implements JwtVerifier {
+        @Override
+        public void verify(SignedJwt jwt) {
+            throw new AssertionError("JWT verify should not be called");
+        }
+
+        @Override
+        public AccessToken verifyAccessToken(String accessToken) {
+            throw new AssertionError("JWT verifyAccessToken should not be called");
         }
     }
 

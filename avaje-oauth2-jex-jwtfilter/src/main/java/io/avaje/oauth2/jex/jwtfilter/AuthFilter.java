@@ -1,9 +1,9 @@
 package io.avaje.oauth2.jex.jwtfilter;
 
 import io.avaje.jex.http.Context;
-import io.avaje.jex.http.HttpFilter;
 import io.avaje.jex.http.HttpResponseException;
 import io.avaje.oauth2.core.data.AccessToken;
+import io.avaje.oauth2.core.jwt.BearerAuthoriser;
 import io.avaje.oauth2.core.jwt.JwtVerifier;
 import io.avaje.oauth2.core.jwt.JwtVerifyException;
 
@@ -23,17 +23,35 @@ final class AuthFilter implements JwtAuthFilter {
 
     private final JwtVerifier verifier;
     private final String[] allowedPaths;
+    private final BearerAuthoriser bearerAuthoriser;
 
-    AuthFilter(JwtVerifier verifier, List<String> allowedPaths) {
+    AuthFilter(JwtVerifier verifier, List<String> allowedPaths, BearerAuthoriser bearerAuthoriser) {
         this.verifier = verifier;
         this.allowedPaths = allowedPaths.toArray(new String[0]);
+        this.bearerAuthoriser = bearerAuthoriser;
     }
 
     @Override
     public void filter(Context ctx, FilterChain chain) {
+        final String path = ctx.path();
+        for (String allowedPath : allowedPaths) {
+            if (path.startsWith(allowedPath)) {
+                chain.proceed();
+                return;
+            }
+        }
+
         String header = ctx.header("Authorization");
         if (header != null && header.startsWith(BEARER_)) {
             String token = header.substring(BEARER_LENGTH);
+            if (bearerAuthoriser != null) {
+                String principal = bearerAuthoriser.authorise(token);
+                if (principal != null) {
+                    ctx.attribute(ATTR_PRINCIPAL, principal);
+                    chain.proceed();
+                    return;
+                }
+            }
             AccessToken accessToken = verifyOrUnauthorized(token);
             ctx.attribute(ATTR_ACCESS_TOKEN, accessToken);
             ctx.attribute(ATTR_PRINCIPAL, accessToken.clientId());
@@ -42,13 +60,6 @@ final class AuthFilter implements JwtAuthFilter {
             return;
         }
 
-        final String path = ctx.path();
-        for (String allowedPath : allowedPaths) {
-            if (path.startsWith(allowedPath)) {
-                chain.proceed();
-                return;
-            }
-        }
         throw new HttpResponseException(401, "Unauthorized");
     }
 

@@ -1,6 +1,7 @@
 package io.avaje.oauth2.helidon.jwtfilter;
 
 import io.avaje.oauth2.core.data.AccessToken;
+import io.avaje.oauth2.core.jwt.BearerAuthoriser;
 import io.avaje.oauth2.core.jwt.JwtVerifier;
 import io.helidon.common.context.Context;
 import io.helidon.http.HeaderNames;
@@ -19,25 +20,16 @@ final class AuthFilter implements JwtAuthFilter {
 
     private final JwtVerifier verifier;
     private final String[] allowedPaths;
+    private final BearerAuthoriser bearerAuthoriser;
 
-    AuthFilter(JwtVerifier verifier, List<String> allowedPaths) {
+    AuthFilter(JwtVerifier verifier, List<String> allowedPaths, BearerAuthoriser bearerAuthoriser) {
         this.verifier = verifier;
         this.allowedPaths = allowedPaths.toArray(new String[0]);
+        this.bearerAuthoriser = bearerAuthoriser;
     }
 
     @Override
     public void filter(FilterChain filterChain, RoutingRequest routingRequest, RoutingResponse routingResponse) {
-        String header = routingRequest.headers().first(HeaderNames.AUTHORIZATION).orElse("");
-        if (header.startsWith(BEARER_)) {
-            String token = header.substring(BEARER_LENGTH);
-            AccessToken accessToken = verifier.verifyAccessToken(token);
-            Context context = routingRequest.context();
-            context.register("security.principal", new TokenPrincipal(accessToken.clientId()));
-            context.register("security.roles", accessToken.scope());
-            filterChain.proceed();
-            return;
-        }
-
         final String path = routingRequest.path().path();
         for (String allowedPath : allowedPaths) {
             if (path.startsWith(allowedPath)) {
@@ -45,6 +37,26 @@ final class AuthFilter implements JwtAuthFilter {
                 return;
             }
         }
+
+        String header = routingRequest.headers().first(HeaderNames.AUTHORIZATION).orElse("");
+        if (header.startsWith(BEARER_)) {
+            String token = header.substring(BEARER_LENGTH);
+            Context context = routingRequest.context();
+            if (bearerAuthoriser != null) {
+                String principal = bearerAuthoriser.authorise(token);
+                if (principal != null) {
+                    context.register("security.principal", new TokenPrincipal(principal));
+                    filterChain.proceed();
+                    return;
+                }
+            }
+            AccessToken accessToken = verifier.verifyAccessToken(token);
+            context.register("security.principal", new TokenPrincipal(accessToken.clientId()));
+            context.register("security.roles", accessToken.scope());
+            filterChain.proceed();
+            return;
+        }
+
         throw new UnauthorizedException("Unauthorized");
     }
 
