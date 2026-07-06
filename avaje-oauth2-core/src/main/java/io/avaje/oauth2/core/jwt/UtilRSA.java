@@ -11,8 +11,15 @@ import java.util.Base64;
 final class UtilRSA {
 
     static PublicKey createRsaKey(KeySet.KeyInfo key) {
-        if (!"RS256".equals(key.algorithm())) {
-            throw new JwtKeyException("Unsupported key algorithm: " + key.algorithm());
+        // The "alg" member is OPTIONAL per RFC 7517 — e.g. Microsoft Entra ID's
+        // JWKS omits it (only kty/use/kid/n/e), while AWS Cognito includes it.
+        // Only reject when an algorithm IS present and it's not the one we support.
+        String algorithm = key.algorithm();
+        if (algorithm != null && !"RS256".equals(algorithm)) {
+            throw new JwtKeyException("Unsupported key algorithm: " + algorithm);
+        }
+        if (!"RSA".equals(key.kty())) {
+            throw new JwtKeyException("Unsupported key type: " + key.kty());
         }
         return createRsaKey(key.exponent(), key.modulus());
     }
