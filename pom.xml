@@ -20,6 +20,7 @@
         <module>avaje-oauth2-helidon-jwtfilter</module>
         <module>avaje-oauth2-jex-jwtfilter</module>
         <module>avaje-oauth2-oidc-cognito</module>
+        <module>avaje-oauth2-oidc-entra</module>
     </modules>
 
     <properties>
