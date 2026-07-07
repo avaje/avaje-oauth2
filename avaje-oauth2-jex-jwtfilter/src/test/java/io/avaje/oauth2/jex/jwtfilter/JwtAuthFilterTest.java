@@ -25,7 +25,7 @@ class JwtAuthFilterTest {
 
     private static AccessToken accessToken() {
         return new AccessToken("sub1", "access", "insight/read", 0L,
-                "issuer", 0L, 0L, 1, "jti1", "client123", null, null);
+                "issuer", 0L, 0L, 1, "jti1", "client123", null, null, null);
     }
 
     @Test

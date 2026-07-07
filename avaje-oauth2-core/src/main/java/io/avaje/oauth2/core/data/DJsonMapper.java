@@ -403,7 +403,7 @@ final class DJsonMapper implements JsonDataMapper {
             // email is its own distinct claim — not merged with upn/unique_name
             // since a upn is not guaranteed to be a real, deliverable email
             // address (Cognito access tokens carry none of these by default).
-            this.names = mapper.properties("sub", "token_use", "scope", "auth_time", "iss", "exp", "iat", "version", "jti", "client_id", "scp", "azp", "appid", "email", "upn", "unique_name");
+            this.names = mapper.properties("sub", "token_use", "scope", "auth_time", "iss", "exp", "iat", "version", "jti", "client_id", "scp", "azp", "appid", "email", "upn", "unique_name", "aud");
         }
 
         @Override
@@ -430,6 +430,7 @@ final class DJsonMapper implements JsonDataMapper {
             String     _val$email = null;
             String     _val$upn = null;
             String     _val$uniqueName = null;
+            String     _val$audience = null;
 
             // read json
             reader.beginObject(names);
@@ -500,6 +501,10 @@ final class DJsonMapper implements JsonDataMapper {
                         _val$uniqueName = reader.readString();
                         break;
 
+                    case "aud":
+                        _val$audience = reader.readString();
+                        break;
+
                     default:
                         reader.unmappedField(fieldName);
                         reader.skipValue();
@@ -511,7 +516,7 @@ final class DJsonMapper implements JsonDataMapper {
             String clientId = _val$clientId != null ? _val$clientId : (_val$azp != null ? _val$azp : _val$appid);
             String email = _val$email;
             String upn = _val$upn != null ? _val$upn : _val$uniqueName;
-            return new AccessToken(_val$sub, _val$tokenUse, scope, _val$authTime, _val$issuer, _val$expiredAt, _val$issuedAt, _val$version, _val$jti, clientId, email, upn);
+            return new AccessToken(_val$sub, _val$tokenUse, scope, _val$authTime, _val$issuer, _val$expiredAt, _val$issuedAt, _val$version, _val$jti, clientId, email, upn, _val$audience);
         }
     }
 }

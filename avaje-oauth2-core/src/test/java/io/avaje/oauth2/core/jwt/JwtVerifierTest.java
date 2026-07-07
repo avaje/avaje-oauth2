@@ -31,4 +31,30 @@ class JwtVerifierTest {
         assertThatNoException().isThrownBy(() -> signer.verify(SignedJwt.parse(accessToken)));
     }
 
+
+    @Test
+    void verifyAccessToken_audienceConfigured_tokenHasNoAudienceClaim_throws() {
+        // this fixture token is a Cognito-style access token with no "aud" claim.
+        String accessToken = "eyJraWQiOiJpTTh6MmRTMXlJQTZQUlZkQThnc05YZ0ZsWkp3UlNNNVdleW5yTGhhbHFrPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI3OTBlNTQ2OC01MGExLTcwYjgtNWQ1My1mMmM3NWM2MmJkMDEiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuYXAtc291dGhlYXN0LTIuYW1hem9uYXdzLmNvbVwvYXAtc291dGhlYXN0LTJfWGpVSEo1SVV4IiwidmVyc2lvbiI6MiwiY2xpZW50X2lkIjoiMTNtcnEzbGttaTExcmgwazlqa3ZsaDNuZ2UiLCJvcmlnaW5fanRpIjoiMjcyNjBlYzItNDg5Mi00NWI0LWE0YTEtZGFkMDVmOWZkODM0IiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJwaG9uZSBvcGVuaWQgZW1haWwiLCJhdXRoX3RpbWUiOjE3MzQ0OTQ5NjksImV4cCI6MTczNDQ5ODU2OSwiaWF0IjoxNzM0NDk0OTY5LCJqdGkiOiI2YjA5Y2JlNS1jM2NmLTQ5MzEtYTY4MS02YzljMTNlNzk2NjkiLCJ1c2VybmFtZSI6Ijc5MGU1NDY4LTUwYTEtNzBiOC01ZDUzLWYyYzc1YzYyYmQwMSJ9.InCl755u-uUHMtI7HYEosf8yVp2FKX-6NAGKnmoVP78fvCxYTlxMcBBPc3GQm52Vgj_Is3Q1PKYyBrvkfHECwfn_SEpvrr5z3yS5kM6TI5gk5hgTWLgLu2Jf-AWujfKwvZ4iF9sXPTDW9bdlKnRizBh0tM6Bx0WC2JisRKNMXw_paN_BFCjCWsvQGco5K8ln4aPtIFfr0EPSSTqNETeX_eRfLXtWfMVI4LZW-458CjB9lJ2sZNLGRhs-uySTE1HAkLaLwUxbghopKPNTz7WsKOUcC21SNXEv2s7FnjtlmHJTJMNzvqowGfiP--sdEbZuGdpGLyaNoFaGq8TUDsppag";
+        JwtVerifier audienceVerifier = JwtVerifier.builder()
+                .addRS256()
+                .keySource(JwtKeySource.build(keySet))
+                .audience("expected-audience")
+                .build();
+
+        assertThatThrownBy(() -> audienceVerifier.verifyAccessToken(accessToken))
+                .isInstanceOf(JwtVerifyException.class)
+                .hasMessageContaining("audience");
+    }
+
+    @Test
+    void verifyAccessToken_noAudienceConfigured_audienceNotChecked() {
+        // no .audience(...) configured -> audience mismatch (or absence) is not checked;
+        // expiry check for this old fixture token is expected to fail instead.
+        String accessToken = "eyJraWQiOiJpTTh6MmRTMXlJQTZQUlZkQThnc05YZ0ZsWkp3UlNNNVdleW5yTGhhbHFrPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI3OTBlNTQ2OC01MGExLTcwYjgtNWQ1My1mMmM3NWM2MmJkMDEiLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuYXAtc291dGhlYXN0LTIuYW1hem9uYXdzLmNvbVwvYXAtc291dGhlYXN0LTJfWGpVSEo1SVV4IiwidmVyc2lvbiI6MiwiY2xpZW50X2lkIjoiMTNtcnEzbGttaTExcmgwazlqa3ZsaDNuZ2UiLCJvcmlnaW5fanRpIjoiMjcyNjBlYzItNDg5Mi00NWI0LWE0YTEtZGFkMDVmOWZkODM0IiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJwaG9uZSBvcGVuaWQgZW1haWwiLCJhdXRoX3RpbWUiOjE3MzQ0OTQ5NjksImV4cCI6MTczNDQ5ODU2OSwiaWF0IjoxNzM0NDk0OTY5LCJqdGkiOiI2YjA5Y2JlNS1jM2NmLTQ5MzEtYTY4MS02YzljMTNlNzk2NjkiLCJ1c2VybmFtZSI6Ijc5MGU1NDY4LTUwYTEtNzBiOC01ZDUzLWYyYzc1YzYyYmQwMSJ9.InCl755u-uUHMtI7HYEosf8yVp2FKX-6NAGKnmoVP78fvCxYTlxMcBBPc3GQm52Vgj_Is3Q1PKYyBrvkfHECwfn_SEpvrr5z3yS5kM6TI5gk5hgTWLgLu2Jf-AWujfKwvZ4iF9sXPTDW9bdlKnRizBh0tM6Bx0WC2JisRKNMXw_paN_BFCjCWsvQGco5K8ln4aPtIFfr0EPSSTqNETeX_eRfLXtWfMVI4LZW-458CjB9lJ2sZNLGRhs-uySTE1HAkLaLwUxbghopKPNTz7WsKOUcC21SNXEv2s7FnjtlmHJTJMNzvqowGfiP--sdEbZuGdpGLyaNoFaGq8TUDsppag";
+        assertThatThrownBy(() -> signer.verifyAccessToken(accessToken))
+                .isInstanceOf(JwtVerifyException.class)
+                .hasMessageContaining("expired");
+    }
+
 }

@@ -160,4 +160,33 @@ class JsonDataMapperTest {
 
         assertThat(accessToken.upn()).isEqualTo("v2-upn@eroad.com");
     }
+
+    @Test
+    void accessToken_audience_isPopulatedFromAudClaim_entraStyle() {
+        String json = """
+            {
+                "sub" : "mySub",
+                "aud" : "api://my-app-client-id",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.audience()).isEqualTo("api://my-app-client-id");
+    }
+
+    @Test
+    void accessToken_audience_isNull_whenAudClaimAbsent_cognitoStyle() {
+        // Cognito access tokens don't carry an "aud" claim at all.
+        String json = """
+            {
+                "sub" : "mySub",
+                "client_id" : "cognitoClientId",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.audience()).isNull();
+    }
 }

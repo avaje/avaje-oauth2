@@ -92,6 +92,17 @@ public interface JwtVerifier {
         Builder issuer(String expectedIssuer);
 
         /**
+         * Specify the expected audience ({@code aud} claim) that access tokens
+         * must carry. Optional — when not set, the audience is not validated.
+         * <p>
+         * Only set this for Entra ID verifiers where the access token's {@code
+         * aud} is the app's Application ID URI or client id. Cognito access
+         * tokens don't carry an {@code aud} claim at all, so leave this unset
+         * for Cognito-only verifiers.
+         */
+        Builder audience(String expectedAudience);
+
+        /**
          * Specify the Clock to use. Defaults to <code>Clock.systemDefaultZone()</code>
          */
         Builder clock(Clock clock);
@@ -100,6 +111,16 @@ public interface JwtVerifier {
          * Specify the Clock skew to use. Defaults to 60 seconds.
          */
         Builder clockSkew(Duration clockSkew);
+
+        /**
+         * Specify the minimum interval between forced remote JWKS refreshes
+         * triggered by an unrecognized {@code kid}. Defaults to 60 seconds.
+         * <p>
+         * Throttles a malicious or misbehaving client from forcing repeated
+         * remote JWKS fetches by presenting bogus/unknown {@code kid} values
+         * on every request.
+         */
+        Builder jwksMinRefreshInterval(Duration minRefreshInterval);
 
         /**
          * Build and return the JwtVerifier.

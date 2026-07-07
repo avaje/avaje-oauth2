@@ -16,6 +16,13 @@ package io.avaje.oauth2.core.data;
  *   deliverable mailbox. Populated from the {@code upn} claim (Entra v2.0
  *   tokens) or {@code unique_name} (Entra v1.0's equivalent claim). {@code
  *   null} for Cognito tokens.
+ * @param audience The {@code aud} claim — identifies the intended recipient
+ *   (resource/API) of the token. Entra ID access tokens always carry this as
+ *   a single string value. Cognito access tokens don't carry an {@code aud}
+ *   claim at all (Cognito uses {@link #clientId()} for that purpose instead),
+ *   so this is {@code null} for Cognito tokens. Only validated by
+ *   {@link io.avaje.oauth2.core.jwt.JwtVerifier} when an expected audience is
+ *   explicitly configured via {@code JwtVerifier.Builder.audience(...)}.
  */
 public record AccessToken(
         String sub,
@@ -29,5 +36,6 @@ public record AccessToken(
         String jti,
         String clientId,
         String email,
-        String upn) {
+        String upn,
+        String audience) {
 }

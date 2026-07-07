@@ -9,20 +9,33 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.PublicKey;
+import java.time.Clock;
 import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 final class RemoteKeySetSource implements JwtKeySource {
 
     private final HttpClient httpClient;
     private final URI jwksUri;
     private final JsonDataMapper jsonMapper;
-    private final ConcurrentHashMap<String, PublicKey> publicKeys = new ConcurrentHashMap<>();
+    private final Clock clock;
+    private final Duration minRefreshInterval;
+    private final ReentrantLock reloadLock = new ReentrantLock();
 
-    RemoteKeySetSource(String jwksUri, HttpClient httpClient, JsonDataMapper jsonMapper) {
+    /** Immutable snapshot, fully replaced (not merged) on each reload so keys
+     * rotated out of the upstream JWKS are evicted rather than trusted forever. */
+    private volatile Map<String, PublicKey> publicKeys = Map.of();
+    private volatile Instant lastReloadAt = Instant.EPOCH;
+
+    RemoteKeySetSource(String jwksUri, HttpClient httpClient, JsonDataMapper jsonMapper, Clock clock, Duration minRefreshInterval) {
         this.httpClient = httpClient;
         this.jwksUri = URI.create(jwksUri);
         this.jsonMapper = jsonMapper;
+        this.clock = clock;
+        this.minRefreshInterval = minRefreshInterval;
     }
 
     JwtKeySource build() {
@@ -31,8 +44,22 @@ final class RemoteKeySetSource implements JwtKeySource {
     }
 
     private void reloadKeys() {
-        for (KeySet.KeyInfo key : readKeySet().keys()) {
-            publicKeys.put(key.kid(), UtilRSA.createRsaKey(key));
+        reloadLock.lock();
+        try {
+            // avoid a thundering herd of concurrent misses each hitting the JWKS
+            // endpoint -- if another thread already refreshed while we were
+            // waiting for the lock (or within the throttle window), skip.
+            if (Instant.now(clock).isBefore(lastReloadAt.plus(minRefreshInterval))) {
+                return;
+            }
+            Map<String, PublicKey> fresh = new HashMap<>();
+            for (KeySet.KeyInfo key : readKeySet().keys()) {
+                fresh.put(key.kid(), UtilRSA.createRsaKey(key));
+            }
+            publicKeys = Map.copyOf(fresh);
+            lastReloadAt = Instant.now(clock);
+        } finally {
+            reloadLock.unlock();
         }
     }
 
@@ -42,7 +69,12 @@ final class RemoteKeySetSource implements JwtKeySource {
         if (publicKey != null) {
             return publicKey;
         }
-        // probably key rotation, so try to reload
+        // Unknown kid - possibly legitimate key rotation, but throttle forced
+        // reloads so a bogus/unknown kid can't force a remote JWKS fetch on
+        // every single request (protects the IDP's JWKS endpoint).
+        if (Instant.now(clock).isBefore(lastReloadAt.plus(minRefreshInterval))) {
+            throw new JwtKeyException("Unable to provide key for " + kid);
+        }
         reloadKeys();
         final PublicKey refreshedKey = publicKeys.get(kid);
         if (refreshedKey == null) {

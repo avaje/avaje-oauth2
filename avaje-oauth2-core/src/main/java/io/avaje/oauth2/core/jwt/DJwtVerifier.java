@@ -23,6 +23,7 @@ final class DJwtVerifier implements JwtVerifier {
     private final JwtKeySource keySource;
     private final JsonDataMapper mapper;
     private final String expectedIssuer;
+    private final String expectedAudience;
     private final Duration clockSkew;
     private final Clock clock;
 
@@ -31,12 +32,14 @@ final class DJwtVerifier implements JwtVerifier {
             JwtKeySource keySource,
             JsonDataMapper mapper,
             String expectedIssuer,
+            String expectedAudience,
             Duration clockSkew,
             Clock clock) {
         this.map = map;
         this.keySource = keySource;
         this.mapper = mapper;
         this.expectedIssuer = expectedIssuer;
+        this.expectedAudience = expectedAudience;
         this.clockSkew = clockSkew;
         this.clock = clock;
     }
@@ -59,6 +62,10 @@ final class DJwtVerifier implements JwtVerifier {
 
         if (expectedIssuer != null && !expectedIssuer.equals(accessTokenData.issuer())) {
             throw new JwtVerifyException("Jwt unexpected issuer");
+        }
+
+        if (expectedAudience != null && !expectedAudience.equals(accessTokenData.audience())) {
+            throw new JwtVerifyException("Jwt unexpected audience");
         }
 
         Instant now = Instant.now(clock);
@@ -114,8 +121,10 @@ final class DJwtVerifier implements JwtVerifier {
         private HttpClient httpClient;
         private JsonMapper simpleMapper;
         private String expectedIssuer;
+        private String expectedAudience;
         private Duration clockSkew = Duration.of(60, ChronoUnit.SECONDS);
         private Clock clock = Clock.systemDefaultZone();
+        private Duration jwksMinRefreshInterval = Duration.of(60, ChronoUnit.SECONDS);
 
         @Override
         public JwtVerifier.Builder addRS256() {
@@ -162,6 +171,12 @@ final class DJwtVerifier implements JwtVerifier {
         }
 
         @Override
+        public JwtVerifier.Builder audience(String expectedAudience) {
+            this.expectedAudience = expectedAudience;
+            return this;
+        }
+
+        @Override
         public JwtVerifier.Builder clock(Clock clock) {
             this.clock = clock;
             return this;
@@ -170,6 +185,12 @@ final class DJwtVerifier implements JwtVerifier {
         @Override
         public JwtVerifier.Builder clockSkew(Duration clockSkew) {
             this.clockSkew = clockSkew;
+            return this;
+        }
+
+        @Override
+        public JwtVerifier.Builder jwksMinRefreshInterval(Duration minRefreshInterval) {
+            this.jwksMinRefreshInterval = minRefreshInterval;
             return this;
         }
 
@@ -186,12 +207,12 @@ final class DJwtVerifier implements JwtVerifier {
                 if (httpClient == null) {
                     httpClient = HttpClient.newHttpClient();
                 }
-                keySource = new RemoteKeySetSource(jwksUri, httpClient, mapper).build();
+                keySource = new RemoteKeySetSource(jwksUri, httpClient, mapper, clock, jwksMinRefreshInterval).build();
             }
             if (map.isEmpty()) {
                 addRS256();
             }
-            return new DJwtVerifier(map, keySource, mapper, expectedIssuer, clockSkew, clock);
+            return new DJwtVerifier(map, keySource, mapper, expectedIssuer, expectedAudience, clockSkew, clock);
         }
     }
 
