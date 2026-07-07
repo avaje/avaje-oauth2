@@ -27,7 +27,7 @@ class JwtAuthFilterTest {
 
     private static AccessToken accessToken() {
         return new AccessToken("sub1", "access", "insight/read", 0L,
-                "issuer", 0L, 0L, 1, "jti1", "client123");
+                "issuer", 0L, 0L, 1, "jti1", "client123", null, null);
     }
 
     @Test
@@ -102,7 +102,7 @@ class JwtAuthFilterTest {
         filter.filter(chain, fakeRequest("Bearer good-jwt", "/v1/apps", context), null);
 
         assertThat(chain.proceeded).isTrue();
-        assertThat(principalName(context)).isEqualTo("client123");
+        assertThat(principalName(context)).isEqualTo("sub1");
         assertThat(context.get("security.roles", String.class)).contains("insight/read");
     }
 
@@ -135,7 +135,7 @@ class JwtAuthFilterTest {
         filter.filter(chain, fakeRequest("Bearer good-jwt", "/v1/apps", context), null);
 
         assertThat(chain.proceeded).isTrue();
-        assertThat(principalName(context)).isEqualTo("client123");
+        assertThat(principalName(context)).isEqualTo("sub1");
     }
 
     @Test

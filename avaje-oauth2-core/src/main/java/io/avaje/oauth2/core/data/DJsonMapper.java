@@ -397,7 +397,13 @@ final class DJsonMapper implements JsonDataMapper {
         private final PropertyNames names;
 
         AccessTokenAdapter(JsonMapper mapper) {
-            this.names = mapper.properties("sub", "token_use", "scope", "auth_time", "iss", "exp", "iat", "version", "jti", "client_id");
+            // scp/azp/appid are Microsoft Entra ID's equivalents of Cognito's
+            // scope/client_id claims — Entra tokens never carry scope/client_id.
+            // unique_name is Entra v1.0's equivalent of the v2.0 upn claim.
+            // email is its own distinct claim — not merged with upn/unique_name
+            // since a upn is not guaranteed to be a real, deliverable email
+            // address (Cognito access tokens carry none of these by default).
+            this.names = mapper.properties("sub", "token_use", "scope", "auth_time", "iss", "exp", "iat", "version", "jti", "client_id", "scp", "azp", "appid", "email", "upn", "unique_name");
         }
 
         @Override
@@ -418,6 +424,12 @@ final class DJsonMapper implements JsonDataMapper {
             int        _val$version = 0;
             String     _val$jti = null;
             String     _val$clientId = null;
+            String     _val$scp = null;
+            String     _val$azp = null;
+            String     _val$appid = null;
+            String     _val$email = null;
+            String     _val$upn = null;
+            String     _val$uniqueName = null;
 
             // read json
             reader.beginObject(names);
@@ -464,13 +476,42 @@ final class DJsonMapper implements JsonDataMapper {
                         _val$clientId = reader.readString();
                         break;
 
+                    case "scp":
+                        _val$scp = reader.readString();
+                        break;
+
+                    case "azp":
+                        _val$azp = reader.readString();
+                        break;
+
+                    case "appid":
+                        _val$appid = reader.readString();
+                        break;
+
+                    case "email":
+                        _val$email = reader.readString();
+                        break;
+
+                    case "upn":
+                        _val$upn = reader.readString();
+                        break;
+
+                    case "unique_name":
+                        _val$uniqueName = reader.readString();
+                        break;
+
                     default:
                         reader.unmappedField(fieldName);
                         reader.skipValue();
                 }
             }
             reader.endObject();
-            return new AccessToken(_val$sub, _val$tokenUse, _val$scope, _val$authTime, _val$issuer, _val$expiredAt, _val$issuedAt, _val$version, _val$jti, _val$clientId);
+            // fall back to Entra's claim names when Cognito's are absent.
+            String scope = _val$scope != null ? _val$scope : _val$scp;
+            String clientId = _val$clientId != null ? _val$clientId : (_val$azp != null ? _val$azp : _val$appid);
+            String email = _val$email;
+            String upn = _val$upn != null ? _val$upn : _val$uniqueName;
+            return new AccessToken(_val$sub, _val$tokenUse, scope, _val$authTime, _val$issuer, _val$expiredAt, _val$issuedAt, _val$version, _val$jti, clientId, email, upn);
         }
     }
 }

@@ -13,7 +13,7 @@ final class AuthFilter implements JwtAuthFilter {
 
     /** Context attribute key holding the verified {@link AccessToken}. */
     static final String ATTR_ACCESS_TOKEN = "security.accessToken";
-    /** Context attribute key holding the token principal (clientId). */
+    /** Context attribute key holding the token principal (the {@code sub} claim). */
     static final String ATTR_PRINCIPAL = "security.principal";
     /** Context attribute key holding the token scope. */
     static final String ATTR_SCOPE = "security.scope";
@@ -54,7 +54,8 @@ final class AuthFilter implements JwtAuthFilter {
             }
             AccessToken accessToken = verifyOrUnauthorized(token);
             ctx.attribute(ATTR_ACCESS_TOKEN, accessToken);
-            ctx.attribute(ATTR_PRINCIPAL, accessToken.clientId());
+            // sub is the stable per-user identifier
+            ctx.attribute(ATTR_PRINCIPAL, accessToken.sub());
             ctx.attribute(ATTR_SCOPE, accessToken.scope());
             chain.proceed();
             return;

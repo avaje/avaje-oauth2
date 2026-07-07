@@ -51,7 +51,8 @@ final class AuthFilter implements JwtAuthFilter {
                 }
             }
             AccessToken accessToken = verifier.verifyAccessToken(token);
-            context.register("security.principal", new TokenPrincipal(accessToken.clientId()));
+            // sub is the stable per-user identifier
+            context.register("security.principal", new TokenPrincipal(accessToken.sub()));
             context.register("security.roles", accessToken.scope());
             filterChain.proceed();
             return;

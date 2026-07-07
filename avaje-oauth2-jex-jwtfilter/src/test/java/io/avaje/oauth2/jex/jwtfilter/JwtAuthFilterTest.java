@@ -25,7 +25,7 @@ class JwtAuthFilterTest {
 
     private static AccessToken accessToken() {
         return new AccessToken("sub1", "access", "insight/read", 0L,
-                "issuer", 0L, 0L, 1, "jti1", "client123");
+                "issuer", 0L, 0L, 1, "jti1", "client123", null, null);
     }
 
     @Test
@@ -68,7 +68,7 @@ class JwtAuthFilterTest {
 
         assertThat(chain.proceeded).isTrue();
         assertThat(ctx.attributes.get(AuthFilter.ATTR_ACCESS_TOKEN)).isSameAs(token);
-        assertThat(ctx.attributes.get(AuthFilter.ATTR_PRINCIPAL)).isEqualTo("client123");
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_PRINCIPAL)).isEqualTo("sub1");
         assertThat(ctx.attributes.get(AuthFilter.ATTR_SCOPE)).isEqualTo("insight/read");
     }
 
@@ -152,7 +152,7 @@ class JwtAuthFilterTest {
 
         assertThat(chain.proceeded).isTrue();
         assertThat(ctx.attributes.get(AuthFilter.ATTR_ACCESS_TOKEN)).isSameAs(token);
-        assertThat(ctx.attributes.get(AuthFilter.ATTR_PRINCIPAL)).isEqualTo("client123");
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_PRINCIPAL)).isEqualTo("sub1");
     }
 
     @Test

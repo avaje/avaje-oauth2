@@ -38,5 +38,126 @@ class JsonDataMapperTest {
         assertThat(accessToken.version()).isEqualTo(2);
         assertThat(accessToken.jti()).isEqualTo("myJti");
         assertThat(accessToken.clientId()).isEqualTo("myClientId");
+        assertThat(accessToken.email()).isNull();
+    }
+
+    @Test
+    void accessToken_entraStyle_fallsBackToScpAndAzp() {
+        // Microsoft Entra ID tokens use scp/azp instead of Cognito's scope/client_id.
+        String json = """
+            {
+                "sub" : "mySub",
+                "iss" : "myIssuer",
+                "exp" : 1738907092,
+                "iat" : 1738903492,
+                "scp" : "access_as_user",
+                "azp" : "myAppClientId",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.sub()).isEqualTo("mySub");
+        assertThat(accessToken.scope()).isEqualTo("access_as_user");
+        assertThat(accessToken.clientId()).isEqualTo("myAppClientId");
+    }
+
+    @Test
+    void accessToken_entraV1Style_fallsBackToAppid() {
+        // Entra v1.0 tokens use appid rather than azp for the client id.
+        String json = """
+            {
+                "sub" : "mySub",
+                "iss" : "myIssuer",
+                "exp" : 1738907092,
+                "iat" : 1738903492,
+                "scp" : "access_as_user",
+                "appid" : "myAppClientId",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.clientId()).isEqualTo("myAppClientId");
+    }
+
+    @Test
+    void accessToken_prefersCognitoClaimsWhenBothPresent() {
+        String json = """
+            {
+                "sub" : "mySub",
+                "scope" : "cognitoScope",
+                "scp" : "entraScope",
+                "client_id" : "cognitoClientId",
+                "azp" : "entraClientId",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.scope()).isEqualTo("cognitoScope");
+        assertThat(accessToken.clientId()).isEqualTo("cognitoClientId");
+    }
+
+    @Test
+    void accessToken_email_isOnlyPopulatedFromEmailClaim() {
+        // email and upn are distinct claims/fields — no fallback between them.
+        String json = """
+            {
+                "sub" : "mySub",
+                "email" : "robin.bygrave@eroad.com",
+                "upn" : "different-upn@eroad.com",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.email()).isEqualTo("robin.bygrave@eroad.com");
+        assertThat(accessToken.upn()).isEqualTo("different-upn@eroad.com");
+    }
+
+    @Test
+    void accessToken_email_isNull_whenOnlyUpnPresent() {
+        String json = """
+            {
+                "sub" : "mySub",
+                "upn" : "robin.bygrave@eroad.com",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.email()).isNull();
+        assertThat(accessToken.upn()).isEqualTo("robin.bygrave@eroad.com");
+    }
+
+    @Test
+    void accessToken_upn_fallsBackToUniqueName_entraV1Style() {
+        // Entra v1.0 tokens use unique_name rather than upn — same concept, different claim name.
+        String json = """
+            {
+                "sub" : "mySub",
+                "unique_name" : "robin.bygrave@eroad.com",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.upn()).isEqualTo("robin.bygrave@eroad.com");
+    }
+
+    @Test
+    void accessToken_upn_prefersUpnOverUniqueName_whenBothPresent() {
+        String json = """
+            {
+                "sub" : "mySub",
+                "upn" : "v2-upn@eroad.com",
+                "unique_name" : "v1-unique-name@eroad.com",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.upn()).isEqualTo("v2-upn@eroad.com");
     }
 }
