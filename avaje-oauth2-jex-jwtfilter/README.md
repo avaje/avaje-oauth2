@@ -40,7 +40,7 @@ On a request, the filter:
   the `JwtVerifier`, and on success registers the following Jex context
   attributes for downstream handlers:
   - `security.accessToken` — the verified `AccessToken`
-  - `security.principal` — the token `clientId` (subject)
+  - `security.principal` — the token `sub` (subject) — the stable per-user identifier
   - `security.scope` — the token scope
 - responds with `401` (via `HttpResponseException`) when the token is missing or
   invalid on a protected path
