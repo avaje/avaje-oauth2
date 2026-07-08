@@ -52,10 +52,10 @@ On success the filter registers the following values on the Helidon
 request `Context` (via string keys) for downstream handlers/routes to
 perform their own, method/path-specific authorization checks:
 
-- `security.accessToken` — the verified `AccessToken` (`AccessToken.class`)
-- `security.principal` — a `Principal` wrapping the token `sub` (`Principal.class`)
-- `security.scope` — the raw `scope`/`scp` claim (`String.class`)
-- `security.roles` — the token's mapped roles/groups (`List.class`) — see
+- `security.accessToken` - the verified `AccessToken` (`AccessToken.class`)
+- `security.principal` - a `Principal` wrapping the token `sub` (`Principal.class`)
+- `security.scope` - the raw `scope`/`scp` claim (`String.class`)
+- `security.roles` - the token's mapped roles/groups (`List.class`) - see
   `AccessToken.roles()`/`hasRole(...)`/`hasAnyRole(...)` in `avaje-oauth2-core`
 
 ```java

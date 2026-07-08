@@ -26,7 +26,7 @@ try {
 ```
 
 Optionally validate the token's `aud` claim against an expected audience. This
-is off by default — only set it for Entra ID verifiers, where the access
+is off by default - only set it for Entra ID verifiers, where the access
 token's `aud` is the app's Application ID URI or client id. Cognito access
 tokens don't carry an `aud` claim at all, so leave this unset for Cognito-only
 verifiers.
@@ -40,7 +40,7 @@ JwtVerifier jwtVerifier = JwtVerifier.builder()
 
 The token's standard time-based claims are always validated (subject to
 `clockSkew`, default 60 seconds): `exp` (expiry), `iat` (issued-at, must not be
-in the future), and `nbf` (not-before, optional per RFC 7519 §4.1.5 — only
+in the future), and `nbf` (not-before, optional per RFC 7519 §4.1.5 - only
 checked when present).
 
 `AccessToken` exposes both delegated-permission scopes and application
@@ -48,7 +48,7 @@ roles/groups, since Entra ID and Cognito represent these differently:
 `scope()`/`hasScope(...)`/`hasAnyScope(...)` cover the space-delimited
 `scope`/`scp` claim, while `roles()`/`hasRole(...)`/`hasAnyRole(...)` cover
 Entra ID's `roles` claim (assigned app roles) or Cognito's `cognito:groups`
-claim (user pool group membership) — `roles()` is an empty list (never
+claim (user pool group membership) - `roles()` is an empty list (never
 `null`) when neither claim is present.
 
 ```java
@@ -75,7 +75,7 @@ JwtVerifier jwtVerifier = JwtVerifier.builder()
 ### MultiIssuerJwtVerifier
 
 A single `JwtVerifier` only trusts one issuer. Use `MultiIssuerJwtVerifier` to
-accept tokens from multiple trusted issuers at once — for example, accepting
+accept tokens from multiple trusted issuers at once - for example, accepting
 both Cognito and Entra ID tokens during a phased migration from one identity
 provider to another, or a multi-tenant setup where different tenants use
 different issuers.
@@ -91,7 +91,7 @@ JwtVerifier verifier = MultiIssuerJwtVerifier.builder()
 ```
 
 The (unverified) `iss` claim is read from the token payload purely to select
-which delegate verifier to use — the selected delegate then performs full
+which delegate verifier to use - the selected delegate then performs full
 signature verification against that issuer's own keys, so a forged/mismatched
 `iss` claim only ever routes to a verifier that will then fail signature
 verification. Each delegate keeps its own issuer, audience, JWKS/keySource,

@@ -101,7 +101,7 @@ class JsonDataMapperTest {
 
     @Test
     void accessToken_email_isOnlyPopulatedFromEmailClaim() {
-        // email and upn are distinct claims/fields — no fallback between them.
+        // email and upn are distinct claims/fields - no fallback between them.
         String json = """
             {
                 "sub" : "mySub",
@@ -133,7 +133,7 @@ class JsonDataMapperTest {
 
     @Test
     void accessToken_upn_fallsBackToUniqueName_entraV1Style() {
-        // Entra v1.0 tokens use unique_name rather than upn — same concept, different claim name.
+        // Entra v1.0 tokens use unique_name rather than upn - same concept, different claim name.
         String json = """
             {
                 "sub" : "mySub",

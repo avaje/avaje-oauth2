@@ -84,7 +84,7 @@ public interface JwtAuthFilter extends HttpFilter {
          * than proceeding.
          * <p>
          * Rules are matched in the order added; the first matching path
-         * prefix wins. Only applies to requests authenticated via JWT — it
+         * prefix wins. Only applies to requests authenticated via JWT - it
          * has no effect on requests accepted by a {@link #bearerAuthoriser},
          * which carry no scope claim.
          *

@@ -7,14 +7,14 @@ import io.avaje.oauth2.core.data.JsonDataMapper;
  * delegate verifiers based on the (unverified) {@code iss} claim of the
  * incoming token.
  * <p>
- * This supports accepting tokens from multiple trusted issuers at once — for
+ * This supports accepting tokens from multiple trusted issuers at once - for
  * example, accepting both Cognito and Entra ID tokens during a phased
  * migration from one identity provider to another, or a multi-tenant setup
  * where different tenants use different issuers.
  * <p>
  * The {@code iss} claim is read from the token payload <b>before</b>
  * signature verification purely to select which delegate verifier to use.
- * This is safe — the selected delegate still performs full signature
+ * This is safe - the selected delegate still performs full signature
  * verification against that issuer's own keys, so a forged/unexpected {@code
  * iss} claim only ever routes to a verifier that will then fail signature
  * verification (or straight up not be registered at all).

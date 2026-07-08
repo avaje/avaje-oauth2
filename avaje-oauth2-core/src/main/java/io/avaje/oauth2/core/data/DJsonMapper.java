@@ -399,9 +399,9 @@ final class DJsonMapper implements JsonDataMapper {
 
         AccessTokenAdapter(JsonMapper mapper) {
             // scp/azp/appid are Microsoft Entra ID's equivalents of Cognito's
-            // scope/client_id claims — Entra tokens never carry scope/client_id.
+            // scope/client_id claims - Entra tokens never carry scope/client_id.
             // unique_name is Entra v1.0's equivalent of the v2.0 upn claim.
-            // email is its own distinct claim — not merged with upn/unique_name
+            // email is its own distinct claim - not merged with upn/unique_name
             // since a upn is not guaranteed to be a real, deliverable email
             // address (Cognito access tokens carry none of these by default).
             this.names = mapper.properties("sub", "token_use", "scope", "auth_time", "iss", "exp", "iat", "version", "jti", "client_id", "scp", "azp", "appid", "email", "upn", "unique_name", "aud", "nbf", "roles", "cognito:groups");

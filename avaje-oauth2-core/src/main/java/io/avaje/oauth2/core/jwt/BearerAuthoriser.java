@@ -2,7 +2,7 @@ package io.avaje.oauth2.core.jwt;
 
 /**
  * Optional pluggable authoriser for {@code Authorization: Bearer} tokens that
- * are not Cognito JWTs — typically a long-lived shared secret (API key).
+ * are not Cognito JWTs - typically a long-lived shared secret (API key).
  * <p>
  * When supplied to a {@code JwtAuthFilter} builder it is consulted for each
  * request carrying an {@code Authorization: Bearer} header, before JWT
@@ -10,7 +10,7 @@ package io.avaje.oauth2.core.jwt;
  * authenticated and JWT verification is skipped. If it returns {@code null} the
  * filter falls through to the standard JWT verify path.
  * <p>
- * This enables hybrid authentication — for example a system that accepts both
+ * This enables hybrid authentication - for example a system that accepts both
  * Cognito JWTs (interactive users) and a long-lived shared secret (programmatic
  * clients such as CLIs or MCP servers), both presented as a bearer token.
  *

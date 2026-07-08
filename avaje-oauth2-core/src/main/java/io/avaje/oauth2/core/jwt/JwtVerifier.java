@@ -93,7 +93,7 @@ public interface JwtVerifier {
 
         /**
          * Specify the expected audience ({@code aud} claim) that access tokens
-         * must carry. Optional — when not set, the audience is not validated.
+         * must carry. Optional - when not set, the audience is not validated.
          * <p>
          * Only set this for Entra ID verifiers where the access token's {@code
          * aud} is the app's Application ID URI or client id. Cognito access

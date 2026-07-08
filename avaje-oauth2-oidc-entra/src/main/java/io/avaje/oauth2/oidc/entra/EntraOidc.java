@@ -9,7 +9,7 @@ import io.avaje.oauth2.core.data.OidcTokens;
  * <p>
  * Note that requesting only the {@code openid}/{@code profile} scopes will
  * <b>not</b> yield a JWT access token that can be validated against the
- * tenant's own JWKS — the app registration must expose an API (an Application
+ * tenant's own JWKS - the app registration must expose an API (an Application
  * ID URI + custom scope, e.g. {@code api://<clientId>/access_as_user}) and the
  * scope requested here must include that resource scope for the resulting
  * access token to be a verifiable JWT with {@code aud} == the client id.

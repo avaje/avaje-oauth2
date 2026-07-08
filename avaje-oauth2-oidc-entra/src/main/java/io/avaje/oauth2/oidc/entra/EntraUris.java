@@ -3,7 +3,7 @@ package io.avaje.oauth2.oidc.entra;
 /**
  * Provides the Microsoft identity platform (Entra ID) v2.0 uris given a Tenant Id.
  * <p>
- * Unlike Cognito, Entra does not have a separate Hosted-UI "domain" — the
+ * Unlike Cognito, Entra does not have a separate Hosted-UI "domain" - the
  * authorize, token and jwks endpoints all live under
  * {@code https://login.microsoftonline.com/<tenantId>}. Note also that the v2.0
  * jwks uri is <em>not</em> {@code <issuer>/.well-known/jwks.json} (Cognito's

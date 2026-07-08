@@ -12,7 +12,7 @@ final class DEntraOidcBuilder implements EntraOidc.Builder {
     private String loginUrl;
     private String tokenEndpoint;
     // openid profile alone does not yield a verifiable JWT access token from
-    // Entra — callers targeting a protected API should override with the
+    // Entra - callers targeting a protected API should override with the
     // app's exposed scope, e.g. "api://<clientId>/access_as_user offline_access".
     private String scope = "openid profile offline_access";
     private JsonDataMapper mapper;

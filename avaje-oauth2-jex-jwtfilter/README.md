@@ -39,12 +39,12 @@ On a request, the filter:
 - otherwise requires an `Authorization: Bearer <token>` header, verifies it with
   the `JwtVerifier`, and on success registers the following Jex context
   attributes for downstream handlers:
-  - `security.accessToken` — the verified `AccessToken` — use this for
+  - `security.accessToken` - the verified `AccessToken` - use this for
     role-based authorization checks (`hasRole(...)`/`hasAnyRole(...)`,
     sourced from Entra's `roles` claim or Cognito's `cognito:groups` claim)
     and scope checks (`hasScope(...)`/`hasAnyScope(...)`)
-  - `security.principal` — the token `sub` (subject) — the stable per-user identifier
-  - `security.scope` — the raw `scope`/`scp` claim
+  - `security.principal` - the token `sub` (subject) - the stable per-user identifier
+  - `security.scope` - the raw `scope`/`scp` claim
 - responds with `401` (via `HttpResponseException`) when the token is missing or
   invalid on a protected path, including a `WWW-Authenticate` challenge header
   per [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750#section-3) (`Bearer`

@@ -11,7 +11,7 @@ import java.util.Base64;
 final class UtilRSA {
 
     static PublicKey createRsaKey(KeySet.KeyInfo key) {
-        // The "alg" member is OPTIONAL per RFC 7517 — e.g. Microsoft Entra ID's
+        // The "alg" member is OPTIONAL per RFC 7517 - e.g. Microsoft Entra ID's
         // JWKS omits it (only kty/use/kid/n/e), while AWS Cognito includes it.
         // Only reject when an algorithm IS present and it's not the one we support.
         String algorithm = key.algorithm();

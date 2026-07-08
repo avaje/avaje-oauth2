@@ -27,7 +27,7 @@ class UtilRSATest {
 
     @Test
     void createRsaKey_withNullAlgorithm_entraStyle() {
-        // Microsoft Entra ID's JWKS omits "alg" entirely — RFC 7517 says it's optional.
+        // Microsoft Entra ID's JWKS omits "alg" entirely - RFC 7517 says it's optional.
         var key = new KeySet.KeyInfo(null, E, "kid1", "RSA", N, "sig");
         assertThat(UtilRSA.createRsaKey(key)).isNotNull();
     }
