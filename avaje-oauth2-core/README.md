@@ -72,6 +72,33 @@ JwtVerifier jwtVerifier = JwtVerifier.builder()
 ```
 
 
+### MultiIssuerJwtVerifier
+
+A single `JwtVerifier` only trusts one issuer. Use `MultiIssuerJwtVerifier` to
+accept tokens from multiple trusted issuers at once — for example, accepting
+both Cognito and Entra ID tokens during a phased migration from one identity
+provider to another, or a multi-tenant setup where different tenants use
+different issuers.
+
+```java
+JwtVerifier verifier = MultiIssuerJwtVerifier.builder()
+    .addIssuer(cognitoIssuer, JwtVerifier.builder().issuer(cognitoIssuer).build())
+    .addIssuer(entraIssuer, JwtVerifier.builder()
+        .issuer(entraIssuer)
+        .audience(entraAudience)
+        .build())
+    .build();
+```
+
+The (unverified) `iss` claim is read from the token payload purely to select
+which delegate verifier to use — the selected delegate then performs full
+signature verification against that issuer's own keys, so a forged/mismatched
+`iss` claim only ever routes to a verifier that will then fail signature
+verification. Each delegate keeps its own issuer, audience, JWKS/keySource,
+and clock-skew configuration, so per-issuer settings (e.g. only Entra needing
+`.audience(...)`) work exactly as if each verifier were used standalone.
+
+
 ### SignedJwt
 
 Parse a SignedJwt.
