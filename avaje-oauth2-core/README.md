@@ -43,6 +43,20 @@ The token's standard time-based claims are always validated (subject to
 in the future), and `nbf` (not-before, optional per RFC 7519 §4.1.5 — only
 checked when present).
 
+`AccessToken` exposes both delegated-permission scopes and application
+roles/groups, since Entra ID and Cognito represent these differently:
+`scope()`/`hasScope(...)`/`hasAnyScope(...)` cover the space-delimited
+`scope`/`scp` claim, while `roles()`/`hasRole(...)`/`hasAnyRole(...)` cover
+Entra ID's `roles` claim (assigned app roles) or Cognito's `cognito:groups`
+claim (user pool group membership) — `roles()` is an empty list (never
+`null`) when neither claim is present.
+
+```java
+if (accessToken.hasAnyRole("Admin", "Owner")) {
+    // proceed with an admin-only operation
+}
+```
+
 When using a remote JWKS (the default, based on `issuer`/`jwksUri`), an
 unrecognized `kid` triggers a forced refresh of the JWKS. This refresh is
 throttled to at most once per `jwksMinRefreshInterval` (default 60 seconds) so

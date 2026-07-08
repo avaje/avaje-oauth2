@@ -20,6 +20,15 @@ import java.util.List;
 
 final class AuthFilter implements JwtAuthFilter {
 
+    /** Context attribute key holding the verified {@link AccessToken}. */
+    static final String ATTR_ACCESS_TOKEN = "security.accessToken";
+    /** Context attribute key holding the token principal (the {@code sub} claim). */
+    static final String ATTR_PRINCIPAL = "security.principal";
+    /** Context attribute key holding the token scope. */
+    static final String ATTR_SCOPE = "security.scope";
+    /** Context attribute key holding the token roles/groups. */
+    static final String ATTR_ROLES = "security.roles";
+
     private static final String BEARER_ = "Bearer ";
     private static final int BEARER_LENGTH = BEARER_.length();
 
@@ -65,9 +74,11 @@ final class AuthFilter implements JwtAuthFilter {
                             .header(HeaderValues.create(HeaderNames.WWW_AUTHENTICATE, BearerChallenge.insufficientScope(required)));
                 }
             }
+            context.register(ATTR_ACCESS_TOKEN, accessToken);
             // sub is the stable per-user identifier
             context.register("security.principal", new TokenPrincipal(accessToken.sub()));
-            context.register("security.roles", accessToken.scope());
+            context.register(ATTR_SCOPE, accessToken.scope());
+            context.register(ATTR_ROLES, accessToken.roles());
             filterChain.proceed();
             return;
         }

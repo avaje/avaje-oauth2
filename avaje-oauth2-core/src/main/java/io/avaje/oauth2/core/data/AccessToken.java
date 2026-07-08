@@ -1,5 +1,7 @@
 package io.avaje.oauth2.core.data;
 
+import java.util.List;
+
 /**
  * @param clientId The OAuth2 client application id (Cognito {@code client_id},
  *   Entra ID {@code azp}/{@code appid}) — identifies which app requested the
@@ -26,6 +28,11 @@ package io.avaje.oauth2.core.data;
  * @param notBefore The {@code nbf} claim (epoch seconds) — the token must not
  *   be accepted before this instant. Optional per RFC 7519 §4.1.5; {@code 0}
  *   when absent, in which case it is not validated.
+ * @param roles Application roles/groups — Entra ID's {@code roles} claim
+ *   (assigned app roles) or Cognito's {@code cognito:groups} claim (user
+ *   pool group membership), whichever is present. Distinct from the
+ *   delegated-permission {@link #scope()} claim. Empty (never {@code null})
+ *   when neither claim is present.
  */
 public record AccessToken(
         String sub,
@@ -41,7 +48,8 @@ public record AccessToken(
         String email,
         String upn,
         String audience,
-        long notBefore) {
+        long notBefore,
+        List<String> roles) {
 
     /**
      * Return {@code true} if the space-delimited {@link #scope()} claim
@@ -66,6 +74,26 @@ public record AccessToken(
     public boolean hasAnyScope(String... scopes) {
         for (String scope : scopes) {
             if (hasScope(scope)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return {@code true} if {@link #roles()} contains the given role.
+     */
+    public boolean hasRole(String role) {
+        return role != null && roles != null && roles.contains(role);
+    }
+
+    /**
+     * Return {@code true} if {@link #roles()} contains at least one of the
+     * given roles.
+     */
+    public boolean hasAnyRole(String... roles) {
+        for (String role : roles) {
+            if (hasRole(role)) {
                 return true;
             }
         }

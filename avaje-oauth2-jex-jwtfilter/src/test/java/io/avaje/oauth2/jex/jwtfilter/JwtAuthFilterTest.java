@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +26,12 @@ class JwtAuthFilterTest {
 
     private static AccessToken accessToken() {
         return new AccessToken("sub1", "access", "insight/read", 0L,
-                "issuer", 0L, 0L, 1, "jti1", "client123", null, null, null, 0L);
+                "issuer", 0L, 0L, 1, "jti1", "client123", null, null, null, 0L, List.of());
+    }
+
+    private static AccessToken accessTokenWithRoles(List<String> roles) {
+        return new AccessToken("sub1", "access", "insight/read", 0L,
+                "issuer", 0L, 0L, 1, "jti1", "client123", null, null, null, 0L, roles);
     }
 
     @Test
@@ -70,6 +76,24 @@ class JwtAuthFilterTest {
         assertThat(ctx.attributes.get(AuthFilter.ATTR_ACCESS_TOKEN)).isSameAs(token);
         assertThat(ctx.attributes.get(AuthFilter.ATTR_PRINCIPAL)).isEqualTo("sub1");
         assertThat(ctx.attributes.get(AuthFilter.ATTR_SCOPE)).isEqualTo("insight/read");
+    }
+
+    @Test
+    void validBearer_withRoles_accessTokenAttributeExposesRoles() {
+        AccessToken token = accessTokenWithRoles(List.of("Admin", "Reader"));
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-token", token))
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer good-token", "/v1/apps");
+        FakeChain chain = new FakeChain();
+
+        filter.filter(ctx.asContext(), chain);
+
+        assertThat(chain.proceeded).isTrue();
+        AccessToken registered = (AccessToken) ctx.attributes.get(AuthFilter.ATTR_ACCESS_TOKEN);
+        assertThat(registered.roles()).containsExactly("Admin", "Reader");
+        assertThat(registered.hasAnyRole("Owner", "Admin")).isTrue();
     }
 
     @Test

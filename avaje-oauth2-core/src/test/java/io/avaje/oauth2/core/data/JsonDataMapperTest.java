@@ -216,4 +216,60 @@ class JsonDataMapperTest {
 
         assertThat(accessToken.notBefore()).isZero();
     }
+
+    @Test
+    void accessToken_roles_isPopulatedFromRolesClaim_entraStyle() {
+        String json = """
+            {
+                "sub" : "mySub",
+                "roles" : ["Admin", "Reader"],
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.roles()).containsExactly("Admin", "Reader");
+    }
+
+    @Test
+    void accessToken_roles_isPopulatedFromCognitoGroupsClaim_cognitoStyle() {
+        String json = """
+            {
+                "sub" : "mySub",
+                "cognito:groups" : ["admins", "readers"],
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.roles()).containsExactly("admins", "readers");
+    }
+
+    @Test
+    void accessToken_roles_prefersEntraRolesWhenBothPresent() {
+        String json = """
+            {
+                "sub" : "mySub",
+                "roles" : ["Admin"],
+                "cognito:groups" : ["admins"],
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.roles()).containsExactly("Admin");
+    }
+
+    @Test
+    void accessToken_roles_isEmpty_whenNeitherClaimPresent() {
+        String json = """
+            {
+                "sub" : "mySub",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.roles()).isEmpty();
+    }
 }

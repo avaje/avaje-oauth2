@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.security.Principal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +30,12 @@ class JwtAuthFilterTest {
 
     private static AccessToken accessToken() {
         return new AccessToken("sub1", "access", "insight/read", 0L,
-                "issuer", 0L, 0L, 1, "jti1", "client123", null, null, null, 0L);
+                "issuer", 0L, 0L, 1, "jti1", "client123", null, null, null, 0L, List.of());
+    }
+
+    private static AccessToken accessTokenWithRoles(List<String> roles) {
+        return new AccessToken("sub1", "access", "insight/read", 0L,
+                "issuer", 0L, 0L, 1, "jti1", "client123", null, null, null, 0L, roles);
     }
 
     @Test
@@ -105,7 +111,11 @@ class JwtAuthFilterTest {
 
         assertThat(chain.proceeded).isTrue();
         assertThat(principalName(context)).isEqualTo("sub1");
-        assertThat(context.get("security.roles", String.class)).contains("insight/read");
+        assertThat(context.get("security.scope", String.class)).contains("insight/read");
+        assertThat(context.get("security.accessToken", AccessToken.class)).hasValueSatisfying(
+                token -> assertThat(token.sub()).isEqualTo("sub1"));
+        assertThat(context.get("security.roles", List.class)).hasValueSatisfying(
+                roles -> assertThat((List<?>) roles).isEmpty());
     }
 
     @Test
@@ -179,6 +189,24 @@ class JwtAuthFilterTest {
         filter.filter(chain, fakeRequest("Bearer bad", "/health/liveness", context), null);
 
         assertThat(chain.proceeded).isTrue();
+    }
+
+    @Test
+    void validBearer_withRoles_registersRolesAttribute() {
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-jwt", accessTokenWithRoles(List.of("Admin", "Reader"))))
+                .build();
+
+        Context context = Context.create();
+        FakeChain chain = new FakeChain();
+
+        filter.filter(chain, fakeRequest("Bearer good-jwt", "/v1/apps", context), null);
+
+        assertThat(chain.proceeded).isTrue();
+        assertThat(context.get("security.roles", List.class)).hasValueSatisfying(
+                roles -> assertThat(roles).containsExactly("Admin", "Reader"));
+        assertThat(context.get("security.accessToken", AccessToken.class)).hasValueSatisfying(
+                token -> assertThat(token.hasAnyRole("Owner", "Admin")).isTrue());
     }
 
     @Test

@@ -9,6 +9,7 @@ import io.avaje.json.mapper.JsonMapper;
 import io.avaje.json.mapper.JsonMapper.Type;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -403,7 +404,7 @@ final class DJsonMapper implements JsonDataMapper {
             // email is its own distinct claim — not merged with upn/unique_name
             // since a upn is not guaranteed to be a real, deliverable email
             // address (Cognito access tokens carry none of these by default).
-            this.names = mapper.properties("sub", "token_use", "scope", "auth_time", "iss", "exp", "iat", "version", "jti", "client_id", "scp", "azp", "appid", "email", "upn", "unique_name", "aud", "nbf");
+            this.names = mapper.properties("sub", "token_use", "scope", "auth_time", "iss", "exp", "iat", "version", "jti", "client_id", "scp", "azp", "appid", "email", "upn", "unique_name", "aud", "nbf", "roles", "cognito:groups");
         }
 
         @Override
@@ -432,6 +433,8 @@ final class DJsonMapper implements JsonDataMapper {
             String     _val$uniqueName = null;
             String     _val$audience = null;
             long       _val$notBefore = 0;
+            List<String> _val$roles = null;
+            List<String> _val$cognitoGroups = null;
 
             // read json
             reader.beginObject(names);
@@ -510,6 +513,14 @@ final class DJsonMapper implements JsonDataMapper {
                         _val$notBefore = reader.readLong();
                         break;
 
+                    case "roles":
+                        _val$roles = readStringArray(reader);
+                        break;
+
+                    case "cognito:groups":
+                        _val$cognitoGroups = readStringArray(reader);
+                        break;
+
                     default:
                         reader.unmappedField(fieldName);
                         reader.skipValue();
@@ -521,7 +532,19 @@ final class DJsonMapper implements JsonDataMapper {
             String clientId = _val$clientId != null ? _val$clientId : (_val$azp != null ? _val$azp : _val$appid);
             String email = _val$email;
             String upn = _val$upn != null ? _val$upn : _val$uniqueName;
-            return new AccessToken(_val$sub, _val$tokenUse, scope, _val$authTime, _val$issuer, _val$expiredAt, _val$issuedAt, _val$version, _val$jti, clientId, email, upn, _val$audience, _val$notBefore);
+            List<String> roles = _val$roles != null ? _val$roles : (_val$cognitoGroups != null ? _val$cognitoGroups : List.of());
+            return new AccessToken(_val$sub, _val$tokenUse, scope, _val$authTime, _val$issuer, _val$expiredAt, _val$issuedAt, _val$version, _val$jti, clientId, email, upn, _val$audience, _val$notBefore, roles);
+        }
+
+        /** Read a JSON array of strings, e.g. Entra's {@code roles} or Cognito's {@code cognito:groups} claim. */
+        private static List<String> readStringArray(JsonReader reader) {
+            List<String> values = new ArrayList<>();
+            reader.beginArray();
+            while (reader.hasNextElement()) {
+                values.add(reader.readString());
+            }
+            reader.endArray();
+            return values;
         }
     }
 }
