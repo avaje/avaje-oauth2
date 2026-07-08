@@ -9,6 +9,7 @@ import io.avaje.oauth2.core.jwt.JwtVerifyException;
 import io.avaje.oauth2.core.jwt.SignedJwt;
 import io.helidon.common.context.Context;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.UnauthorizedException;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
@@ -107,7 +108,7 @@ class JwtAuthFilterTest {
     }
 
     @Test
-    void bearerAuthoriser_returnsNull_andJwtInvalid_propagatesAndDoesNotProceed() {
+    void bearerAuthoriser_returnsNull_andJwtInvalid_convertsToUnauthorizedWithChallenge() {
         JwtAuthFilter filter = JwtAuthFilter.builder()
                 .verifier(new FakeVerifier("good-jwt", accessToken()))
                 .bearerAuthoriser(t -> null)
@@ -116,10 +117,14 @@ class JwtAuthFilterTest {
         Context context = Context.create();
         FakeChain chain = new FakeChain();
 
-        // Helidon variant does not wrap JwtVerifier failures (unlike the Jex variant);
-        // an invalid JWT surfaces the JwtVerifyException. Key assertion: it does not proceed.
+        // an invalid JWT is now consistently converted to a 401 with a
+        // WWW-Authenticate challenge (matching the Jex variant), rather than
+        // letting the raw JwtVerifyException propagate (which would have
+        // otherwise surfaced as an unhandled 500).
         assertThatThrownBy(() -> filter.filter(chain, fakeRequest("Bearer something-else", "/v1/apps", context), null))
-                .isInstanceOf(JwtVerifyException.class);
+                .isInstanceOf(UnauthorizedException.class)
+                .satisfies(e -> assertThat(((UnauthorizedException) e).headers().value(HeaderNames.WWW_AUTHENTICATE))
+                        .hasValueSatisfying(value -> assertThat(value).contains("invalid_token")));
         assertThat(chain.proceeded).isFalse();
     }
 
@@ -150,7 +155,9 @@ class JwtAuthFilterTest {
         FakeChain chain = new FakeChain();
 
         assertThatThrownBy(() -> filter.filter(chain, fakeRequest(null, "/v1/apps", context), null))
-                .isInstanceOf(UnauthorizedException.class);
+                .isInstanceOf(UnauthorizedException.class)
+                .satisfies(e -> assertThat(((UnauthorizedException) e).headers().value(HeaderNames.WWW_AUTHENTICATE))
+                        .contains("Bearer"));
         assertThat(chain.proceeded).isFalse();
     }
 

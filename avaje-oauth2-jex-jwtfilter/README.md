@@ -43,7 +43,10 @@ On a request, the filter:
   - `security.principal` — the token `sub` (subject) — the stable per-user identifier
   - `security.scope` — the token scope
 - responds with `401` (via `HttpResponseException`) when the token is missing or
-  invalid on a protected path
+  invalid on a protected path, including a `WWW-Authenticate` challenge header
+  per [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750#section-3) (`Bearer`
+  when no token was supplied, `Bearer error="invalid_token"` when verification
+  failed)
 
 ## Dependency
 

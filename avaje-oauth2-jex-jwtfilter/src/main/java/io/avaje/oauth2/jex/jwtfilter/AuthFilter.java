@@ -4,6 +4,7 @@ import io.avaje.jex.http.Context;
 import io.avaje.jex.http.HttpResponseException;
 import io.avaje.oauth2.core.data.AccessToken;
 import io.avaje.oauth2.core.jwt.BearerAuthoriser;
+import io.avaje.oauth2.core.jwt.BearerChallenge;
 import io.avaje.oauth2.core.jwt.JwtVerifier;
 import io.avaje.oauth2.core.jwt.JwtVerifyException;
 
@@ -18,6 +19,7 @@ final class AuthFilter implements JwtAuthFilter {
     /** Context attribute key holding the token scope. */
     static final String ATTR_SCOPE = "security.scope";
 
+    private static final String WWW_AUTHENTICATE = "WWW-Authenticate";
     private static final String BEARER_ = "Bearer ";
     private static final int BEARER_LENGTH = BEARER_.length();
 
@@ -52,7 +54,7 @@ final class AuthFilter implements JwtAuthFilter {
                     return;
                 }
             }
-            AccessToken accessToken = verifyOrUnauthorized(token);
+            AccessToken accessToken = verifyOrUnauthorized(ctx, token);
             ctx.attribute(ATTR_ACCESS_TOKEN, accessToken);
             // sub is the stable per-user identifier
             ctx.attribute(ATTR_PRINCIPAL, accessToken.sub());
@@ -61,14 +63,17 @@ final class AuthFilter implements JwtAuthFilter {
             return;
         }
 
+        ctx.header(WWW_AUTHENTICATE, BearerChallenge.missingToken());
         throw new HttpResponseException(401, "Unauthorized");
     }
 
-    private AccessToken verifyOrUnauthorized(String token) {
+    private AccessToken verifyOrUnauthorized(Context ctx, String token) {
         try {
             return verifier.verifyAccessToken(token);
         } catch (JwtVerifyException e) {
+            ctx.header(WWW_AUTHENTICATE, BearerChallenge.invalidToken(e.getMessage()));
             throw new HttpResponseException(401, "Unauthorized");
         }
     }
 }
+

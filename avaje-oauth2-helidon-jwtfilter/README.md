@@ -24,6 +24,13 @@ JwtAuthFilter filter = JwtAuthFilter.builder()
     .build();
 ```
 
+On a request, the filter permits any request whose path starts with a
+configured `permit(...)` prefix without requiring a token, and otherwise
+responds with `401` (via `UnauthorizedException`) when the token is missing
+or invalid, including a `WWW-Authenticate` challenge header per
+[RFC 6750](https://www.rfc-editor.org/rfc/rfc6750#section-3) (`Bearer` when no
+token was supplied, `Bearer error="invalid_token"` when verification failed).
+
 ## Dependency
 
 ```xml

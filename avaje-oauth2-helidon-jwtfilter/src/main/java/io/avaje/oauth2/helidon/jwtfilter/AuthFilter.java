@@ -2,9 +2,12 @@ package io.avaje.oauth2.helidon.jwtfilter;
 
 import io.avaje.oauth2.core.data.AccessToken;
 import io.avaje.oauth2.core.jwt.BearerAuthoriser;
+import io.avaje.oauth2.core.jwt.BearerChallenge;
 import io.avaje.oauth2.core.jwt.JwtVerifier;
+import io.avaje.oauth2.core.jwt.JwtVerifyException;
 import io.helidon.common.context.Context;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.UnauthorizedException;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
@@ -50,7 +53,7 @@ final class AuthFilter implements JwtAuthFilter {
                     return;
                 }
             }
-            AccessToken accessToken = verifier.verifyAccessToken(token);
+            AccessToken accessToken = verifyOrUnauthorized(token);
             // sub is the stable per-user identifier
             context.register("security.principal", new TokenPrincipal(accessToken.sub()));
             context.register("security.roles", accessToken.scope());
@@ -58,7 +61,17 @@ final class AuthFilter implements JwtAuthFilter {
             return;
         }
 
-        throw new UnauthorizedException("Unauthorized");
+        throw new UnauthorizedException("Unauthorized")
+                .header(HeaderValues.create(HeaderNames.WWW_AUTHENTICATE, BearerChallenge.missingToken()));
+    }
+
+    private AccessToken verifyOrUnauthorized(String token) {
+        try {
+            return verifier.verifyAccessToken(token);
+        } catch (JwtVerifyException e) {
+            throw new UnauthorizedException("Unauthorized", e)
+                    .header(HeaderValues.create(HeaderNames.WWW_AUTHENTICATE, BearerChallenge.invalidToken(e.getMessage())));
+        }
     }
 
     private static final class TokenPrincipal implements Principal {
@@ -75,3 +88,4 @@ final class AuthFilter implements JwtAuthFilter {
         }
     }
 }
+

@@ -85,6 +85,7 @@ class JwtAuthFilterTest {
                 .isInstanceOf(HttpResponseException.class)
                 .satisfies(e -> assertThat(((HttpResponseException) e).status()).isEqualTo(401));
         assertThat(chain.proceeded).isFalse();
+        assertThat(ctx.responseHeaders.get("WWW-Authenticate")).contains("invalid_token");
     }
 
     @Test
@@ -116,6 +117,7 @@ class JwtAuthFilterTest {
                 .isInstanceOf(HttpResponseException.class)
                 .satisfies(e -> assertThat(((HttpResponseException) e).status()).isEqualTo(401));
         assertThat(chain.proceeded).isFalse();
+        assertThat(ctx.responseHeaders.get("WWW-Authenticate")).isEqualTo("Bearer");
     }
 
     @Test
@@ -169,6 +171,7 @@ class JwtAuthFilterTest {
                 .isInstanceOf(HttpResponseException.class)
                 .satisfies(e -> assertThat(((HttpResponseException) e).status()).isEqualTo(401));
         assertThat(chain.proceeded).isFalse();
+        assertThat(ctx.responseHeaders.get("WWW-Authenticate")).contains("invalid_token");
     }
 
     @Test
@@ -242,11 +245,18 @@ class JwtAuthFilterTest {
      */
     private static final class FakeContext {
         final Map<String, Object> attributes = new HashMap<>();
+        final Map<String, String> responseHeaders = new HashMap<>();
         private final Context proxy;
 
         FakeContext(String authHeader, String path) {
             InvocationHandler handler = (p, method, args) -> switch (method.getName()) {
-                case "header" -> "Authorization".equals(args[0]) ? authHeader : null;
+                case "header" -> {
+                    if (args.length == 1) {
+                        yield "Authorization".equals(args[0]) ? authHeader : null;
+                    }
+                    responseHeaders.put((String) args[0], (String) args[1]);
+                    yield p;
+                }
                 case "path" -> path;
                 case "attribute" -> {
                     attributes.put((String) args[0], args[1]);
