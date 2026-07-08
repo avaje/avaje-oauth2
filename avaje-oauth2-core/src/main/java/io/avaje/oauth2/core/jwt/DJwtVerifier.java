@@ -84,6 +84,14 @@ final class DJwtVerifier implements JwtVerifier {
                 throw new JwtVerifyException("Jwt invalid issuedAt " + issAt);
             }
         }
+
+        long notBefore = accessTokenData.notBefore();
+        if (notBefore > 0) {
+            Instant nbf = Instant.ofEpochSecond(notBefore);
+            if (now.plus(clockSkew).isBefore(nbf)) {
+                throw new JwtVerifyException("Jwt not yet valid, nbf " + nbf);
+            }
+        }
         return accessTokenData;
     }
 

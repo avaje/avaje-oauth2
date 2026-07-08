@@ -189,4 +189,31 @@ class JsonDataMapperTest {
 
         assertThat(accessToken.audience()).isNull();
     }
+
+    @Test
+    void accessToken_notBefore_isPopulatedFromNbfClaim() {
+        String json = """
+            {
+                "sub" : "mySub",
+                "nbf" : 1738903492,
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.notBefore()).isEqualTo(1738903492L);
+    }
+
+    @Test
+    void accessToken_notBefore_isZero_whenNbfClaimAbsent() {
+        String json = """
+            {
+                "sub" : "mySub",
+            }
+            """;
+
+        AccessToken accessToken = jsonDataMapper.readAccessToken(json);
+
+        assertThat(accessToken.notBefore()).isZero();
+    }
 }

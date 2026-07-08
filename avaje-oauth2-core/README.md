@@ -38,6 +38,11 @@ JwtVerifier jwtVerifier = JwtVerifier.builder()
     .build();
 ```
 
+The token's standard time-based claims are always validated (subject to
+`clockSkew`, default 60 seconds): `exp` (expiry), `iat` (issued-at, must not be
+in the future), and `nbf` (not-before, optional per RFC 7519 §4.1.5 — only
+checked when present).
+
 When using a remote JWKS (the default, based on `issuer`/`jwksUri`), an
 unrecognized `kid` triggers a forced refresh of the JWKS. This refresh is
 throttled to at most once per `jwksMinRefreshInterval` (default 60 seconds) so

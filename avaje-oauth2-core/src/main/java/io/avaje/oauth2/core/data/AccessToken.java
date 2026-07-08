@@ -23,6 +23,9 @@ package io.avaje.oauth2.core.data;
  *   so this is {@code null} for Cognito tokens. Only validated by
  *   {@link io.avaje.oauth2.core.jwt.JwtVerifier} when an expected audience is
  *   explicitly configured via {@code JwtVerifier.Builder.audience(...)}.
+ * @param notBefore The {@code nbf} claim (epoch seconds) — the token must not
+ *   be accepted before this instant. Optional per RFC 7519 §4.1.5; {@code 0}
+ *   when absent, in which case it is not validated.
  */
 public record AccessToken(
         String sub,
@@ -37,5 +40,6 @@ public record AccessToken(
         String clientId,
         String email,
         String upn,
-        String audience) {
+        String audience,
+        long notBefore) {
 }
