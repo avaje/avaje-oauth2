@@ -42,4 +42,33 @@ public record AccessToken(
         String upn,
         String audience,
         long notBefore) {
+
+    /**
+     * Return {@code true} if the space-delimited {@link #scope()} claim
+     * contains the given scope as a whole token.
+     */
+    public boolean hasScope(String scope) {
+        if (scope == null || scope.isEmpty() || this.scope == null) {
+            return false;
+        }
+        for (String candidate : this.scope.split(" ")) {
+            if (candidate.equals(scope)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return {@code true} if {@link #scope()} contains at least one of the
+     * given scopes.
+     */
+    public boolean hasAnyScope(String... scopes) {
+        for (String scope : scopes) {
+            if (hasScope(scope)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

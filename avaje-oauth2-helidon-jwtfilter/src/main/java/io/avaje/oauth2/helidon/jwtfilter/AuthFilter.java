@@ -5,7 +5,9 @@ import io.avaje.oauth2.core.jwt.BearerAuthoriser;
 import io.avaje.oauth2.core.jwt.BearerChallenge;
 import io.avaje.oauth2.core.jwt.JwtVerifier;
 import io.avaje.oauth2.core.jwt.JwtVerifyException;
+import io.avaje.oauth2.core.jwt.RequiredScopes;
 import io.helidon.common.context.Context;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.UnauthorizedException;
@@ -24,11 +26,13 @@ final class AuthFilter implements JwtAuthFilter {
     private final JwtVerifier verifier;
     private final String[] allowedPaths;
     private final BearerAuthoriser bearerAuthoriser;
+    private final RequiredScopes requiredScopes;
 
-    AuthFilter(JwtVerifier verifier, List<String> allowedPaths, BearerAuthoriser bearerAuthoriser) {
+    AuthFilter(JwtVerifier verifier, List<String> allowedPaths, BearerAuthoriser bearerAuthoriser, RequiredScopes requiredScopes) {
         this.verifier = verifier;
         this.allowedPaths = allowedPaths.toArray(new String[0]);
         this.bearerAuthoriser = bearerAuthoriser;
+        this.requiredScopes = requiredScopes;
     }
 
     @Override
@@ -54,6 +58,13 @@ final class AuthFilter implements JwtAuthFilter {
                 }
             }
             AccessToken accessToken = verifyOrUnauthorized(token);
+            if (!requiredScopes.isEmpty()) {
+                String[] required = requiredScopes.requiredScopes(path);
+                if (required != null && !accessToken.hasAnyScope(required)) {
+                    throw new ForbiddenException("Forbidden")
+                            .header(HeaderValues.create(HeaderNames.WWW_AUTHENTICATE, BearerChallenge.insufficientScope(required)));
+                }
+            }
             // sub is the stable per-user identifier
             context.register("security.principal", new TokenPrincipal(accessToken.sub()));
             context.register("security.roles", accessToken.scope());

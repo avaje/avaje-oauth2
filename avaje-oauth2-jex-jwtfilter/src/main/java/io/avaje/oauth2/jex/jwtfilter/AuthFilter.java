@@ -7,6 +7,7 @@ import io.avaje.oauth2.core.jwt.BearerAuthoriser;
 import io.avaje.oauth2.core.jwt.BearerChallenge;
 import io.avaje.oauth2.core.jwt.JwtVerifier;
 import io.avaje.oauth2.core.jwt.JwtVerifyException;
+import io.avaje.oauth2.core.jwt.RequiredScopes;
 
 import java.util.List;
 
@@ -26,11 +27,13 @@ final class AuthFilter implements JwtAuthFilter {
     private final JwtVerifier verifier;
     private final String[] allowedPaths;
     private final BearerAuthoriser bearerAuthoriser;
+    private final RequiredScopes requiredScopes;
 
-    AuthFilter(JwtVerifier verifier, List<String> allowedPaths, BearerAuthoriser bearerAuthoriser) {
+    AuthFilter(JwtVerifier verifier, List<String> allowedPaths, BearerAuthoriser bearerAuthoriser, RequiredScopes requiredScopes) {
         this.verifier = verifier;
         this.allowedPaths = allowedPaths.toArray(new String[0]);
         this.bearerAuthoriser = bearerAuthoriser;
+        this.requiredScopes = requiredScopes;
     }
 
     @Override
@@ -55,6 +58,13 @@ final class AuthFilter implements JwtAuthFilter {
                 }
             }
             AccessToken accessToken = verifyOrUnauthorized(ctx, token);
+            if (!requiredScopes.isEmpty()) {
+                String[] required = requiredScopes.requiredScopes(path);
+                if (required != null && !accessToken.hasAnyScope(required)) {
+                    ctx.header(WWW_AUTHENTICATE, BearerChallenge.insufficientScope(required));
+                    throw new HttpResponseException(403, "Forbidden");
+                }
+            }
             ctx.attribute(ATTR_ACCESS_TOKEN, accessToken);
             // sub is the stable per-user identifier
             ctx.attribute(ATTR_PRINCIPAL, accessToken.sub());

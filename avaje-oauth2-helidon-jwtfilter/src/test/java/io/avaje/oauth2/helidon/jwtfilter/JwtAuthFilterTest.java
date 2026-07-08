@@ -8,6 +8,7 @@ import io.avaje.oauth2.core.jwt.JwtVerifier;
 import io.avaje.oauth2.core.jwt.JwtVerifyException;
 import io.avaje.oauth2.core.jwt.SignedJwt;
 import io.helidon.common.context.Context;
+import io.helidon.http.ForbiddenException;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.UnauthorizedException;
@@ -178,6 +179,74 @@ class JwtAuthFilterTest {
         filter.filter(chain, fakeRequest("Bearer bad", "/health/liveness", context), null);
 
         assertThat(chain.proceeded).isTrue();
+    }
+
+    @Test
+    void requireScope_sufficientScope_proceeds() {
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-jwt", accessToken()))
+                .requireScope("/v1/apps", "insight/read")
+                .build();
+
+        Context context = Context.create();
+        FakeChain chain = new FakeChain();
+
+        filter.filter(chain, fakeRequest("Bearer good-jwt", "/v1/apps", context), null);
+
+        assertThat(chain.proceeded).isTrue();
+        assertThat(principalName(context)).isEqualTo("sub1");
+    }
+
+    @Test
+    void requireScope_insufficientScope_throwsForbidden() {
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-jwt", accessToken()))
+                .requireScope("/v1/apps", "insight/write")
+                .build();
+
+        Context context = Context.create();
+        FakeChain chain = new FakeChain();
+
+        assertThatThrownBy(() -> filter.filter(chain, fakeRequest("Bearer good-jwt", "/v1/apps", context), null))
+                .isInstanceOf(ForbiddenException.class)
+                .satisfies(e -> assertThat(((ForbiddenException) e).headers().value(HeaderNames.WWW_AUTHENTICATE))
+                        .hasValueSatisfying(value -> assertThat(value)
+                                .contains("insufficient_scope")
+                                .contains("insight/write")));
+        assertThat(chain.proceeded).isFalse();
+    }
+
+    @Test
+    void requireScope_pathNotMatched_ignored() {
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-jwt", accessToken()))
+                .requireScope("/v1/admin", "insight/write")
+                .build();
+
+        Context context = Context.create();
+        FakeChain chain = new FakeChain();
+
+        filter.filter(chain, fakeRequest("Bearer good-jwt", "/v1/apps", context), null);
+
+        assertThat(chain.proceeded).isTrue();
+    }
+
+    @Test
+    void requireScope_bearerAuthoriser_notEnforced() {
+        // API key auth carries no scope claim - requireScope must not apply to it.
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new ThrowingVerifier())
+                .bearerAuthoriser(token -> "secret-123".equals(token) ? "api-key" : null)
+                .requireScope("/v1/apps", "insight/write")
+                .build();
+
+        Context context = Context.create();
+        FakeChain chain = new FakeChain();
+
+        filter.filter(chain, fakeRequest("Bearer secret-123", "/v1/apps", context), null);
+
+        assertThat(chain.proceeded).isTrue();
+        assertThat(principalName(context)).isEqualTo("api-key");
     }
 
     private static String principalName(Context context) {

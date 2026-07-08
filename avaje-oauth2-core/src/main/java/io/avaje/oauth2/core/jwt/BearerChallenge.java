@@ -35,6 +35,18 @@ public final class BearerChallenge {
         return "Bearer error=\"invalid_token\", error_description=\"" + escape(description) + "\"";
     }
 
+    /**
+     * Challenge for a request bearing a validly authenticated token that
+     * lacks a required scope, per
+     * <a href="https://www.rfc-editor.org/rfc/rfc6750#section-3.1">RFC 6750 section 3.1</a>.
+     *
+     * @param anyOfScopes The scope(s) that would have satisfied the request (at least one of these was required).
+     */
+    public static String insufficientScope(String... anyOfScopes) {
+        String scope = String.join(" ", anyOfScopes);
+        return "Bearer error=\"insufficient_scope\", scope=\"" + escape(scope) + "\"";
+    }
+
     private static String escape(String value) {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }

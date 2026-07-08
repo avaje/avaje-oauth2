@@ -47,6 +47,21 @@ On a request, the filter:
   per [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750#section-3) (`Bearer`
   when no token was supplied, `Bearer error="invalid_token"` when verification
   failed)
+- optionally, when one or more `requireScope(pathPrefix, anyOfScopes...)`
+  rules are configured, responds with `403` when a validly authenticated
+  token lacks all of the required scopes for the matched path, including a
+  `WWW-Authenticate: Bearer error="insufficient_scope"` challenge header per
+  [RFC 6750 section 3.1](https://www.rfc-editor.org/rfc/rfc6750#section-3.1).
+  Only applies to JWT-authenticated requests, not requests accepted via
+  `bearerAuthoriser`.
+
+```java
+JwtAuthFilter filter = JwtAuthFilter.builder()
+    .permit("/health")
+    .verifier(jwtVerifier)
+    .requireScope("/v1/admin", "insight/admin")
+    .build();
+```
 
 ## Dependency
 

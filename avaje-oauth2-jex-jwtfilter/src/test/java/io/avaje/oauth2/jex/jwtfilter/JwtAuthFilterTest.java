@@ -193,6 +193,75 @@ class JwtAuthFilterTest {
         assertThat(chain.proceeded).isTrue();
     }
 
+    @Test
+    void requireScope_sufficientScope_proceeds() {
+        AccessToken token = accessToken();
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-token", token))
+                .requireScope("/v1/apps", "insight/read")
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer good-token", "/v1/apps");
+        FakeChain chain = new FakeChain();
+
+        filter.filter(ctx.asContext(), chain);
+
+        assertThat(chain.proceeded).isTrue();
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_ACCESS_TOKEN)).isSameAs(token);
+    }
+
+    @Test
+    void requireScope_insufficientScope_throws403() {
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-token", accessToken()))
+                .requireScope("/v1/apps", "insight/write")
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer good-token", "/v1/apps");
+        FakeChain chain = new FakeChain();
+
+        assertThatThrownBy(() -> filter.filter(ctx.asContext(), chain))
+                .isInstanceOf(HttpResponseException.class)
+                .satisfies(e -> assertThat(((HttpResponseException) e).status()).isEqualTo(403));
+        assertThat(chain.proceeded).isFalse();
+        assertThat(ctx.responseHeaders.get("WWW-Authenticate"))
+                .contains("insufficient_scope")
+                .contains("insight/write");
+    }
+
+    @Test
+    void requireScope_pathNotMatched_ignored() {
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new FakeVerifier("good-token", accessToken()))
+                .requireScope("/v1/admin", "insight/write")
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer good-token", "/v1/apps");
+        FakeChain chain = new FakeChain();
+
+        filter.filter(ctx.asContext(), chain);
+
+        assertThat(chain.proceeded).isTrue();
+    }
+
+    @Test
+    void requireScope_bearerAuthoriser_notEnforced() {
+        // API key auth carries no scope claim - requireScope must not apply to it.
+        JwtAuthFilter filter = JwtAuthFilter.builder()
+                .verifier(new ThrowingVerifier())
+                .bearerAuthoriser(t -> "secret-123".equals(t) ? "api-key" : null)
+                .requireScope("/v1/apps", "insight/write")
+                .build();
+
+        FakeContext ctx = new FakeContext("Bearer secret-123", "/v1/apps");
+        FakeChain chain = new FakeChain();
+
+        filter.filter(ctx.asContext(), chain);
+
+        assertThat(chain.proceeded).isTrue();
+        assertThat(ctx.attributes.get(AuthFilter.ATTR_PRINCIPAL)).isEqualTo("api-key");
+    }
+
     /** JwtVerifier that returns a preset token only for an exact match, else 401. */
     private static final class FakeVerifier implements JwtVerifier {
         private final String validToken;

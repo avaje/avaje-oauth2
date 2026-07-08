@@ -77,6 +77,23 @@ public interface JwtAuthFilter extends HttpFilter {
         Builder bearerAuthoriser(BearerAuthoriser bearerAuthoriser);
 
         /**
+         * Require at least one of the given scopes for paths starting with
+         * the given prefix. A JWT-authenticated request presenting a valid
+         * token that lacks all of the given scopes is rejected with
+         * {@code 403 Forbidden} (RFC 6750 {@code insufficient_scope}) rather
+         * than proceeding.
+         * <p>
+         * Rules are matched in the order added; the first matching path
+         * prefix wins. Only applies to requests authenticated via JWT — it
+         * has no effect on requests accepted by a {@link #bearerAuthoriser},
+         * which carry no scope claim.
+         *
+         * @param pathPrefix   The path prefix requiring the scope(s).
+         * @param anyOfScopes  The token must carry at least one of these scopes.
+         */
+        Builder requireScope(String pathPrefix, String... anyOfScopes);
+
+        /**
          * Build and return the JwtAuthFilter.
          */
         JwtAuthFilter build();
