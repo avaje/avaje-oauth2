@@ -23,11 +23,9 @@ can make its own per-route authorization decisions.
 
 ## Version & Requirements
 
-- **Latest Release**: 1.5 (on Maven Central) - note: this `docs/` tree also
-  describes newer capabilities (multi-issuer support, `roles`/`hasRole`,
-  `requireScope`, `nbf`/`aud` validation, JWKS cache hygiene) present in this
-  checkout but **not yet published** as a release; check the actual installed
-  version's javadoc/tests if something described here doesn't compile.
+- **Latest Release**: See `pom.xml` (`<version>`) for the current released
+  version - do not hardcode a version number here or in guides; use the
+  Maven property `${avaje.oauth2.version}` in examples instead.
 - **Minimum Java Version**: 21+
 - **Build Tool**: Maven
 
@@ -157,14 +155,14 @@ their own authorization decisions (see
 <dependency>
     <groupId>io.avaje</groupId>
     <artifactId>avaje-oauth2-core</artifactId>
-    <version>1.5</version>
+    <version>${avaje.oauth2.version}</version>
 </dependency>
 
 <!-- pick one filter module for your web framework -->
 <dependency>
     <groupId>io.avaje</groupId>
     <artifactId>avaje-oauth2-jex-jwtfilter</artifactId>
-    <version>1.5</version>
+    <version>${avaje.oauth2.version}</version>
 </dependency>
 ```
 

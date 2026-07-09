@@ -44,13 +44,13 @@ OidcTokens tokens = cognitoOidc.obtainTokens(code, pkce.verifier());
 <dependency>
     <groupId>io.avaje</groupId>
     <artifactId>avaje-oauth2-oidc-cognito</artifactId>
-    <version>1.5</version>
+    <version>${avaje.oauth2.version}</version>
 </dependency>
 <!-- or -->
 <dependency>
     <groupId>io.avaje</groupId>
     <artifactId>avaje-oauth2-oidc-entra</artifactId>
-    <version>1.5</version>
+    <version>${avaje.oauth2.version}</version>
 </dependency>
 ```
 

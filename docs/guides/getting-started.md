@@ -27,20 +27,20 @@ Add the dependencies:
 <dependency>
     <groupId>io.avaje</groupId>
     <artifactId>avaje-oauth2-core</artifactId>
-    <version>1.5</version>
+    <version>${avaje.oauth2.version}</version>
 </dependency>
 
 <!-- pick ONE, matching your web framework -->
 <dependency>
     <groupId>io.avaje</groupId>
     <artifactId>avaje-oauth2-jex-jwtfilter</artifactId>
-    <version>1.5</version>
+    <version>${avaje.oauth2.version}</version>
 </dependency>
 <!-- or -->
 <dependency>
     <groupId>io.avaje</groupId>
     <artifactId>avaje-oauth2-helidon-jwtfilter</artifactId>
-    <version>1.5</version>
+    <version>${avaje.oauth2.version}</version>
 </dependency>
 ```
 
