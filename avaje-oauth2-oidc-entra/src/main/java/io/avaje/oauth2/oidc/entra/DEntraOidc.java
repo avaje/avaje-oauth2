@@ -101,6 +101,25 @@ final class DEntraOidc implements EntraOidc {
             request.formParam("client_id", clientId);
         }
         HttpResponse<String> res = request.POST().asString();
-        return mapper.readOidcTokens(res.body());
+        if (res.statusCode() < 200 || res.statusCode() >= 300) {
+            throw new IllegalStateException("OAuth token endpoint returned HTTP "
+                    + res.statusCode() + ": " + responseBody(res.body()));
+        }
+        OidcTokens tokens = mapper.readOidcTokens(res.body());
+        if (tokens == null || tokens.accessToken() == null || tokens.accessToken().isBlank()) {
+            throw new IllegalStateException("OAuth token endpoint response did not contain access_token");
+        }
+        return tokens;
+    }
+
+    private String responseBody(String body) {
+        if (body == null) {
+            return "<empty response>";
+        }
+        String compact = body.replaceAll("\\s+", " ").trim();
+        compact = compact.replaceAll(
+                "(?i)(\"(?:access_token|refresh_token|id_token|client_secret)\"\\s*:\\s*\")[^\"]*(\")",
+                "$1<redacted>$2");
+        return compact.length() <= 1000 ? compact : compact.substring(0, 1000) + "...";
     }
 }
