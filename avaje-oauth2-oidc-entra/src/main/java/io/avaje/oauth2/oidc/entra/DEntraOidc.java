@@ -1,6 +1,5 @@
 package io.avaje.oauth2.oidc.entra;
 
-import io.avaje.http.client.BasicAuthIntercept;
 import io.avaje.http.client.HttpClient;
 import io.avaje.http.client.HttpClientRequest;
 import io.avaje.http.client.UrlBuilder;
@@ -13,6 +12,7 @@ final class DEntraOidc implements EntraOidc {
 
     private final String loginUrl;
     private final String clientId;
+    private final String clientSecret;
     private final boolean publicClient;
     private final String redirectUri;
     private final String scope;
@@ -32,16 +32,13 @@ final class DEntraOidc implements EntraOidc {
 
         this.loginUrl = loginUrl;
         this.clientId = clientId;
+        this.clientSecret = clientSecret;
         this.publicClient = clientSecret == null || clientSecret.isBlank();
         this.redirectUri = redirectUri;
         this.scope = scope;
         this.tokenEndpoint = tokenEndpoint;
         this.mapper = mapper;
-        HttpClient.Builder builder = HttpClient.builder().baseUrl(domain);
-        if (!publicClient) {
-            builder.requestIntercept(new BasicAuthIntercept(clientId, clientSecret));
-        }
-        this.httpClient = builder.build();
+        this.httpClient = HttpClient.builder().baseUrl(domain).build();
     }
 
     @Override
@@ -99,6 +96,9 @@ final class DEntraOidc implements EntraOidc {
     private OidcTokens readTokens(HttpClientRequest request) {
         if (publicClient) {
             request.formParam("client_id", clientId);
+        } else {
+            request.formParam("client_id", clientId)
+                    .formParam("client_secret", clientSecret);
         }
         HttpResponse<String> res = request.POST().asString();
         if (res.statusCode() < 200 || res.statusCode() >= 300) {
